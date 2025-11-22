@@ -1,16 +1,18 @@
-type ViewId = 'login-view' | 'dashboard-view' | 'game-view';
+type ViewId = 'login-view' | 'dashboard-view' | 'game-view' | 'profile-view';
 
 const routes: Record<string, ViewId> = {
     '/': 'login-view',
     '/login': 'login-view',
     '/dashboard': 'dashboard-view',
-    '/game': 'game-view'
+    '/game': 'game-view',
+    '/profile' : 'profile-view'
 };
 
 const views: Record<ViewId, HTMLElement | null> = {
     'login-view': document.getElementById('login-view'),
     'dashboard-view': document.getElementById('dashboard-view'),
-    'game-view': document.getElementById('game-view')
+    'game-view': document.getElementById('game-view'),
+    'profile-view': document.getElementById('profile-view')
 };
 
 function showView(viewId: ViewId): void {
