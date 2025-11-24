@@ -23,7 +23,7 @@ app.decorate('authenticate', async function (req: any, reply: any) {
 
 // Rotas
 app.register(pingRoutes)
-app.register(authRoutes)
+app.register(authRoutes, { prefix: '/auth'})
 
 // Rodar
 app.listen({ port: 3333 }).then(() => {

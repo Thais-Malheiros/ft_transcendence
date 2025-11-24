@@ -107,7 +107,7 @@ export async function authRoutes(app: FastifyInstance) {
 		clearInterval(cleanupTimer)
 	})
 
-	app.post('/auth/register', { schema: registerSchema }, async (req, reply) => {
+	app.post('/register', { schema: registerSchema }, async (req, reply) => {
 		const { name, nick, email, password } = req.body as User
 
 		if (users.find(u => u.nick === nick)) {
@@ -131,7 +131,7 @@ export async function authRoutes(app: FastifyInstance) {
 		return (sanitize(user))
 	})
 
-	app.post('/auth/login', { schema: loginSchema }, async (req, reply) => {
+	app.post('/login', { schema: loginSchema }, async (req, reply) => {
 		const { identifier, password } = req.body as { identifier: string; password: string }
 
 		const user = findByIdentifier(identifier)
@@ -154,7 +154,7 @@ export async function authRoutes(app: FastifyInstance) {
 		return { token, user: sanitize(user) }
 	})
 
-	app.post('/auth/anonymous', { schema: anonymousSchema }, async (req, reply) => {
+	app.post('/anonymous', { schema: anonymousSchema }, async (req, reply) => {
 		const { nick } = req.body as { nick: string }
 
 		const generatedNick = `anonymous_${nick}`
@@ -182,7 +182,7 @@ export async function authRoutes(app: FastifyInstance) {
 		return ( {token, user: sanitize(user)} )
 	})
 
-	app.get('/auth/me', {
+	app.get('/me', {
 		onRequest: [app.authenticate]
 	}, async (req: any, reply) => {
 		const user = users.find(u => u.id === req.user.id)
@@ -195,7 +195,7 @@ export async function authRoutes(app: FastifyInstance) {
 		return ({ user: sanitize(user) })
 	})
 
-	app.post('/auth/logout', {
+	app.post('/logout', {
 		onRequest: [app.authenticate]
 	}, async (req: any, reply) => {
 		const userId = req.user.id
