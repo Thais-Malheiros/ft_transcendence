@@ -38,7 +38,8 @@ Cria uma nova conta de usuário permanente.
   "name": "João Silva",
   "nick": "joao123",
   "email": "joao@example.com",
-  "password": "senha1234"
+  "password": "senha1234",
+  "gang": "batatas"
 }
 ```
 
@@ -47,6 +48,7 @@ Cria uma nova conta de usuário permanente.
 - `nick`: mínimo 2 caracteres, único
 - `email`: formato válido, único
 - `password`: mínimo 4 caracteres
+- `gang`: valores permitidos: `"batatas"` ou `"maças"`
 
 **Resposta de Sucesso (200):**
 ```json
@@ -55,7 +57,8 @@ Cria uma nova conta de usuário permanente.
   "name": "João Silva",
   "nick": "joao123",
   "email": "joao@example.com",
-  "isAnonymous": false
+  "isAnonymous": false,
+  "gang": "batatas"
 }
 ```
 
@@ -91,7 +94,8 @@ Autentica um usuário usando email ou nick.
     "name": "João Silva",
     "nick": "joao123",
     "email": "joao@example.com",
-    "isAnonymous": false
+    "isAnonymous": false,
+    "gang": "batatas"
   }
 }
 ```
@@ -105,6 +109,8 @@ Autentica um usuário usando email ou nick.
 
 #### `POST /auth/anonymous`
 Cria uma sessão anônima temporária. Usuários anônimos são removidos após 5 minutos de inatividade.
+
+**Todos os usuários anônimos pertencem automaticamente à gangue das "batatas".**
 
 **Body (opcional):**
 ```json
@@ -124,7 +130,8 @@ Cria uma sessão anônima temporária. Usuários anônimos são removidos após 
     "id": 2,
     "name": "anonymous_visitante",
     "nick": "anonymous_visitante",
-    "isAnonymous": true
+    "isAnonymous": true,
+    "gang": "batatas"
   }
 }
 ```
@@ -134,6 +141,7 @@ Cria uma sessão anônima temporária. Usuários anônimos são removidos após 
 - Nick recebe prefixo `anonymous_`
 - Usuário é removido após 5 minutos de inatividade
 - Inatividade reseta a cada requisição autenticada
+- **Gangue fixa:** todos anônimos pertencem à gangue "batatas"
 
 **Erros:**
 - `400` - Nick já está em uso
@@ -160,7 +168,8 @@ Usuário registrado:
     "name": "João Silva",
     "nick": "joao123",
     "email": "joao@example.com",
-    "isAnonymous": false
+    "isAnonymous": false,
+    "gang": "batatas"
   }
 }
 ```
@@ -172,7 +181,8 @@ Usuário anônimo:
     "id": 2,
     "name": "anonymous_visitante",
     "nick": "anonymous_visitante",
-    "isAnonymous": true
+    "isAnonymous": true,
+    "gang": "batatas"
   }
 }
 ```
@@ -209,6 +219,22 @@ Authorization: Bearer <token>
 **Notas:**
 - Usuários anônimos são removidos imediatamente do sistema
 - Usuários registrados apenas recebem confirmação (token deve ser descartado no cliente)
+
+---
+
+## Sistema de Gangues
+
+### Gangues Disponíveis
+
+O sistema possui duas gangues:
+- **batatas** - Gangue padrão para usuários anônimos
+- **maças** - Disponível apenas para usuários registrados
+
+### Regras
+- Usuários **registrados** escolhem sua gangue no momento do registro
+- Usuários **anônimos** sempre pertencem à gangue "batatas"
+- A gangue não pode ser alterada após o registro
+- A gangue é incluída no token JWT
 
 ---
 
@@ -252,7 +278,21 @@ curl -X POST http://localhost:3333/auth/register \
     "name": "João Silva",
     "nick": "joao123",
     "email": "joao@example.com",
-    "password": "senha1234"
+    "password": "senha1234",
+    "gang": "batatas"
+  }'
+```
+
+**Registrar (gangue maças):**
+```bash
+curl -X POST http://localhost:3333/auth/register \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "name": "Maria Santos",
+    "nick": "maria456",
+    "email": "maria@example.com",
+    "password": "senha1234",
+    "gang": "maças"
   }'
 ```
 
@@ -310,12 +350,7 @@ JWT_SECRET=sua_chave_secreta_super_segura_aqui
 ### JWT
 - Algoritmo: HS256
 - Expiração: 2 horas (apenas anônimos)
-- Payload: `{ id, email, nick, isAnonymous }`
-
-### Recomendações
-- Use HTTPS em produção
-- Valide todos os inputs
-- Implemente refresh tokens para sessões longas
+- Payload: `{ id, email, nick, isAnonymous, gang }`
 
 ---
 
@@ -325,3 +360,4 @@ JWT_SECRET=sua_chave_secreta_super_segura_aqui
 - [ ] Sistema de refresh token
 - [ ] Validar inputs
 - [ ] Fazer testes mais rigorosos
+- [ ] Estatísticas por gangue

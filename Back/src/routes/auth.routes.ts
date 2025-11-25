@@ -8,19 +8,21 @@ interface User {
 	email: string;
 	password?: string;
 	isAnonymous: boolean;
-	lastActivity?: number
+	lastActivity?: number;
+	gang: 'batatas' | 'maças'
 }
 
 const registerSchema = {
 	body: {
 		type: 'object',
-		required: ['name', 'nick', 'email', 'password'],
+		required: ['name', 'nick', 'email', 'password', 'gang'],
 		additionalProperties: false,
 		properties: {
 			name: { type: 'string', minLength: 1 },
 			nick: { type: 'string', minLength: 2 },
 			email: { type: 'string', format: 'email' },
-			password: { type: 'string', minLength: 4 }
+			password: { type: 'string', minLength: 4 },
+			gang: { type: 'string', enum: ['batatas', 'maças' ] }
 		}
 	}
 }
@@ -61,7 +63,8 @@ function sanitize(user: User) {
 		name: user.name,
 		nick: user.nick,
 		email: user.isAnonymous ? undefined : user.email,
-		isAnonymous: user.isAnonymous
+		isAnonymous: user.isAnonymous,
+		gang: user.gang
 	}
 }
 
@@ -108,7 +111,7 @@ export async function authRoutes(app: FastifyInstance) {
 	})
 
 	app.post('/register', { schema: registerSchema }, async (req, reply) => {
-		const { name, nick, email, password } = req.body as User
+		const { name, nick, email, password, gang } = req.body as User
 
 		if (users.find(u => u.nick === nick)) {
 			return (reply.code(400).send({ error: 'Nick já em uso' }))
@@ -124,7 +127,8 @@ export async function authRoutes(app: FastifyInstance) {
 			nick: nick,
 			email: email,
 			password: passwordHash,
-			isAnonymous: false
+			isAnonymous: false,
+			gang: gang
 		}
 		users.push(user)
 
@@ -148,7 +152,8 @@ export async function authRoutes(app: FastifyInstance) {
 			id: user.id,
 			email: user.email,
 			nick: user.nick,
-			isAnonymous: user.isAnonymous
+			isAnonymous: user.isAnonymous,
+			gang: user.gang
 		})
 
 		return { token, user: sanitize(user) }
@@ -168,7 +173,8 @@ export async function authRoutes(app: FastifyInstance) {
 			nick: generatedNick,
 			email: `anonymous_${nextId}@local`,
 			isAnonymous: true,
-			lastActivity: Date.now()
+			lastActivity: Date.now(),
+			gang: 'batatas'
 		}
 		users.push(user)
 
@@ -176,7 +182,8 @@ export async function authRoutes(app: FastifyInstance) {
 			id: user.id,
 			email: user.email,
 			nick: user.nick,
-			isAnonymous: true
+			isAnonymous: true,
+			gang: 'batatas'
 		}, { expiresIn: '2h'})
 
 		return ( {token, user: sanitize(user)} )

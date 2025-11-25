@@ -3,8 +3,20 @@ import 'fastify'
 
 declare module '@fastify/jwt' {
 	interface FastifyJWT {
-		payload: { id: number; email: string; nick: string; isAnonymous: boolean }
-		user: { id: number; email: string; nick: string; isAnonymous: boolean }
+		payload: {
+			id: number;
+			email: string;
+			nick: string;
+			isAnonymous: boolean;
+			gang: string
+		}
+		user: {
+			id: number;
+			email: string;
+			nick: string;
+			isAnonymous: boolean;
+			gang: string
+		}
 	}
 }
 
