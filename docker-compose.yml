@@ -12,5 +12,8 @@ services:
       - "${FRONT_PORT}:${FRONT_PORT}"
     environment:
       - NODE_ENV=development
+    env_file:
+      - .env
+
 
     command: sh -c "npm run css & npm run dev"

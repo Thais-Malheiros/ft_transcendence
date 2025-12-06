@@ -35,11 +35,11 @@ export default class Paddle {
     }
 
     draw(ctx: CanvasRenderingContext2D): void {
-        ctx.fillStyle = '#ffffff';
+        ctx.fillStyle = '#4444ff';
         ctx.fillRect(this.x, this.y, this.width, this.height);
 
-        ctx.fillStyle = '#4444ff';
-        ctx.fillRect(this.x, this.y + this.height / 2 - 10, this.width, 20);
+        // ctx.fillStyle = '#4444ff';
+        // ctx.fillRect(this.x, this.y + this.height / 2 - 10, this.width, 20);
     }
 
     reset(): void {
