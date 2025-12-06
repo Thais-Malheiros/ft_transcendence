@@ -137,6 +137,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const loginGuestButton = document.getElementById('loginGuestButton');
     const playGameButton = document.getElementById('playGameButton');
     const quitGameButton = document.getElementById('quitGameButton');
+    const backToDashboardButton = document.getElementById('backToDashboardButton');
 
     if (loginGuestButton) {
         loginGuestButton.addEventListener('click', () => {
@@ -157,6 +158,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 currentGame.stopGame();
                 currentGame = null;
             }
+            navigateTo('/dashboard');
+        });
+    }
+
+    if (backToDashboardButton) {
+        backToDashboardButton.addEventListener('click', () => {
             navigateTo('/dashboard');
         });
     }
