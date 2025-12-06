@@ -25,4 +25,31 @@
   .quit-button:hover {
     @apply bg-red-400;
   }
+
+  .input-field {
+	  @apply bg-black/40 border border-primary px-4 py-3 w-full rounded-xl text-lg text-white focus:outline-none focus:border-secondary transition-all;
+  }
+  .input-error {
+	  @apply border-red-500 text-red-300;
+  }
+
+  .dash-item {
+	@apply w-full flex items-center gap-6 p-6 mb-6 rounded-xl cursor-pointer
+		 shadow-xl transition duration-200 hover:brightness-110 hover:translate-x-1;
 }
+
+.dash-icon {
+	@apply text-5xl font-extrabold w-24 text-center;
+}
+
+.dash-title {
+	@apply text-3xl font-bold text-white;
+}
+
+.dash-subtitle {
+	@apply text-lg text-gray-300;
+}
+
+}
+
+

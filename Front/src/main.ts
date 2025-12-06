@@ -72,6 +72,53 @@ function startGame(): void {
     currentGame.startGame();
 }
 
+
+function showRegisterError(message: string, inputId?: string) {
+	const errorMsg = document.getElementById("register-error-msg")!;
+	errorMsg.textContent = message;
+	errorMsg.classList.remove("hidden");
+
+	document.querySelectorAll(".input-field").forEach((el) => {
+		el.classList.remove("input-error");
+	});
+
+	if (inputId) {
+		const field = document.getElementById(inputId);
+		field?.classList.add("input-error");
+		field?.scrollIntoView({ behavior: "smooth", block: "center" });
+	}
+}
+
+function setupTournamentTabs() {
+    const tabCreate = document.getElementById('tab-create');
+    const tabJoin = document.getElementById('tab-join');
+
+    const contentCreate = document.getElementById('content-create');
+    const contentJoin = document.getElementById('content-join');
+
+    if (!tabCreate || !tabJoin || !contentCreate || !contentJoin) {
+        console.warn("Tournament tabs: elementos não encontrados.");
+        return;
+    }
+
+    tabCreate.addEventListener("click", () => {
+        contentCreate.classList.remove("hidden");
+        contentJoin.classList.add("hidden");
+
+        tabCreate.classList.add("active");
+        tabJoin.classList.remove("active");
+    });
+
+    tabJoin.addEventListener("click", () => {
+        contentJoin.classList.remove("hidden");
+        contentCreate.classList.add("hidden");
+
+        tabJoin.classList.add("active");
+        tabCreate.classList.remove("active");
+    });
+}
+
+
 function handleGameOver(winnerName: string, score: { p1: number; p2: number }): void {
     console.log("Jogo terminou!", winnerName, score);
 
@@ -137,4 +184,8 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
     });
+});
+
+window.addEventListener("DOMContentLoaded", () => {
+    setupTournamentTabs();
 });
