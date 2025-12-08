@@ -1,3 +1,4 @@
+import { api } from './services/api';
 import './style.css';
 import { showModal } from './utils/modalManager';
 import { getDashboardHtml } from './views/dashboard';
@@ -94,16 +95,16 @@ function renderView(route: Route) {
 		case 'profile':
 			if (state.user && state.user.isAnonymous) {
 				navigateTo("dashboard", false);
+				showModal({
+					title: "Acesso Negado",
+					message: "Usuários anônimos não podem acessar o perfil. Por favor, crie uma conta para personalizar seu perfil.",
+					type: "danger",
+					confirmText: "Voltar ao Menu"
+				});
 				return;
 			}
 
 			app.innerHTML = getProfileHtml();
-
-			const inputProfileName = document.getElementById('input-profile-name') as HTMLInputElement;
-			if (inputProfileName && state.user) {
-				inputProfileName.value = state.user.name;
-			}
-
 			setupProfileEvents();
 			break;
 
@@ -130,43 +131,71 @@ window.addEventListener('hashchange', () => {
 });
 
 function setupLoginEvents() {
-	document.getElementById('btn-login-user')?.addEventListener('click', () => {
-		const user = (document.getElementById('input-login-user') as HTMLInputElement).value;
-		const pass = (document.getElementById('input-login-pass') as HTMLInputElement).value;
+	document.getElementById('btn-login-user')?.addEventListener('click', async () => {
+		const userInput = (document.getElementById('input-login-user') as HTMLInputElement).value;
+		const passInput = (document.getElementById('input-login-pass') as HTMLInputElement).value;
 
-		if (user && pass) {
+		if (userInput && passInput) {
 			// Fazer requisição de login aqui
+			try {
+				const response = await api.post<{ token: string, user: User }>('/auth/login', {
+					"identifier": userInput,
+					"password": passInput
+				});
 
-			state.isAuthenticated = true;
-			state.user = {
-				id: 1,
-				name: user,
-				nick: user,
-				gang: Math.random() < 0.5 ? 'batatas' : 'tomates',
-				isAnonymous: false
-			};
+				// Salvar Token para o api.ts usar automaticamente nas próximas chamadas
+				localStorage.setItem('token', response.token);
 
-			localStorage.setItem('appState', JSON.stringify(state));
-			navigateTo('dashboard');
+				state.isAuthenticated = true;
+				state.user = {
+					id: response.user.id,
+					name: response.user.name,
+					nick: response.user.nick,
+					gang: response.user.gang,
+					isAnonymous: response.user.isAnonymous
+				};
+
+				localStorage.setItem('appState', JSON.stringify(state));
+				navigateTo('dashboard');
+
+			} catch (error) {
+				showModal({
+					title: "Erro no login",
+					message: "Não foi possível realizar o login. Por favor, verifique suas credenciais e tente novamente.",
+					type: "danger",
+					confirmText: "Tentar novamente"
+				});
+			}
 		}
 	})
 
-	document.getElementById('btn-login-guest')?.addEventListener('click', () => {
+	document.getElementById('btn-login-guest')?.addEventListener('click', async () => {
 		const userAnonymous = (document.getElementById('input-login-guest') as HTMLInputElement).value;
 
 		if (userAnonymous) {
-			// Fazer requisição de login aqui
+			try {
+				const response = await api.post<{ token: string, user: User }>('/auth/anonymous', {
+					"nick": userAnonymous
+				});
 
-			state.isAuthenticated = true;
-			state.user = {
-				id: 1,
-				name: userAnonymous,
-				nick: userAnonymous,
-				gang: Math.random() < 0.5 ? 'batatas' : 'tomates',
-				isAnonymous: false
-			};
-			localStorage.setItem('appState', JSON.stringify(state));
-			navigateTo('dashboard');
+				localStorage.setItem('token', response.token);
+				console.log(response.user);
+
+				state.isAuthenticated = true;
+				state.user = {
+					id: response.user.id,
+					name: response.user.name,
+					nick: response.user.nick,
+					gang: response.user.gang,
+					isAnonymous: response.user.isAnonymous
+				};
+				localStorage.setItem('appState', JSON.stringify(state));
+				navigateTo('dashboard');
+
+			} catch (error) {
+				// Tratar erro
+			}
+
 		}
 	})
 
@@ -180,7 +209,7 @@ function setupRegisterEvents() {
 		navigateTo('login');
 	})
 
-	document.getElementById('btn-register-submit')?.addEventListener('click', () => {
+	document.getElementById('btn-register-submit')?.addEventListener('click', async () => {
 		const name = (document.getElementById('input-register-name') as HTMLInputElement).value;
 		const nick = (document.getElementById('input-register-nick') as HTMLInputElement).value;
 		const email = (document.getElementById('input-register-email') as HTMLInputElement).value;
@@ -188,17 +217,34 @@ function setupRegisterEvents() {
 		const gang = (document.getElementById('select-register-gang') as HTMLSelectElement).value;
 
 		if (name && nick && email && pass && gang) {
-			// Fazer requisição de registro aqui
+			try {
+				await api.post('/auth/register', {
+					"name": name,
+					"nick": nick,
+					"email": email,
+					"password": pass,
+					"gang": gang
+				});
 
-			showModal({
-				title: "Bem-vindo!",
-				message: `A conta de ${name} foi criada com sucesso. Prepare-se para a batalha!`,
-				type: "success",
-				confirmText: "Ir para Login",
-				onConfirm: () => {
-					navigateTo('login'); // Só navega quando o usuário clica no botão do modal
-				}
-			});
+				showModal({
+					title: "Bem-vindo!",
+					message: `A conta de ${name} foi criada com sucesso. Prepare-se para a batalha!`,
+					type: "success",
+					confirmText: "Ir para Login",
+					onConfirm: () => {
+						navigateTo('login');
+					}
+				});
+
+			} catch (error) {
+				showModal({
+					title: "Erro no cadastro",
+					message: "Não foi possível criar a conta. Por favor, verifique os dados e tente novamente.",
+					type: "danger",
+					confirmText: "Tentar novamente"
+				});
+			}
+
 		} else {
 			showModal({
 				title: "Erro no cadastro",
@@ -222,10 +268,22 @@ function setupDashboardEvents() {
 			type: "danger",
 			confirmText: "Sim, Sair",
 			cancelText: "Cancelar",
-			onConfirm: () => {
+			onConfirm: async () => {
+
+				if (state.user && state.user.isAnonymous) {
+					try {
+						await api.post('/auth/logout', {
+							userId: state.user.id
+						});
+					} catch (error) {
+						// Tratar erro
+					}
+				}
+
 				state.user = null;
 				state.isAuthenticated = false;
 				localStorage.removeItem('appState');
+				localStorage.removeItem('token');
 				navigateTo('login');
 			}
 		});
@@ -245,12 +303,10 @@ function setupProfileEvents() {
 		navigateTo('dashboard');
 	})
 
-	document.getElementById('btn-profile-save')?.addEventListener('click', () => {
+	document.getElementById('btn-profile-save')?.addEventListener('click', async () => {
 		const name = (document.getElementById('input-profile-name') as HTMLInputElement).value;
 
 		if (name) {
-			// Fazer requisição de atualização de perfil aqui
-
 			showModal({
 				title: "Perfil Atualizado",
 				message: `Seu nome de exibição foi alterado para ${name}. Continue dominando a arena!`,

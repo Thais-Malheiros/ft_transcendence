@@ -27,7 +27,7 @@ export function getLoginHtml() {
 							<label class="block text-sm text-gray-400 mb-1 ml-1">Login</label>
 							${Input({
 								id: "input-login-user",
-								placeholder: "Seu usuário",
+								placeholder: "Seu usuário ou email",
 							})}
 						</div>
 

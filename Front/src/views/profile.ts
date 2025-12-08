@@ -13,6 +13,7 @@ const StatItem = (label: string, valueId: string, colorClass: string = "text-whi
 export function getProfileHtml() {
 
 	const userGang = state.user?.gang === 'batatas' ? 'Batatas' : 'Tomates';
+	const nick = state.user ? state.user.nick : "Visitante";
 
 	return `
 		<img src="src/assets/bg-login.png" alt="Background" class="fixed inset-0 w-full h-full object-cover -z-10 opacity-30" />
@@ -43,7 +44,10 @@ export function getProfileHtml() {
 						<div class="flex-1 w-full flex flex-col justify-between">
 							<div>
 								<label class="block text-sm text-gray-400 mb-2 ml-1">Nome de Exibição</label>
-								${Input({ id: "input-profile-name", value: "Visitante", className: "mb-8 bg-slate-800/50 border-white/10 focus:bg-black/60" })}
+								${Input({ id: "input-profile-name",
+											value: `${nick}`,
+											className: "mb-8 bg-slate-800/50 border-white/10 focus:bg-black/60"
+										})}
 
 								<h3 class="text-lg text-white mb-4 font-bold flex items-center gap-2">
 									<span class="w-2 h-8 bg-purple-500 rounded-full inline-block"></span>
