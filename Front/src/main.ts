@@ -68,6 +68,10 @@ function renderView(route: Route) {
 			break;
 
 		case 'register':
+			if (state.isAuthenticated) {
+				navigateTo('dashboard', false);
+				return;
+			}
 			app.innerHTML = getRegisterHtml();
 			setupRegisterEvents();
 			break;
