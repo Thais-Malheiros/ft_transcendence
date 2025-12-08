@@ -1,0 +1,12 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #06b6d4;
+  --color-secondary: #a855f7;
+  --color-dark: #0f172a;
+}
+
+body {
+  @apply bg-slate-950 text-white font-mono m-0 overflow-x-hidden;
+  background-image: radial-gradient(ellipse at top, #1e293b, #020617);
+}

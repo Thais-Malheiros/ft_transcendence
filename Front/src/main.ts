@@ -1,340 +1,183 @@
-import PongGame from './PongGame.js';
-import { navigateTo } from './router.js';
-import AppState, { Match } from './state.js';
+import './style.css';
+import { showModal } from './utils/modalManager';
+import { getDashboardHtml } from './views/dashboard';
 
-let currentGame: PongGame | null = null;
+import { getLoginHtml } from './views/login';
+import { getProfileHtml } from './views/profile';
+import { getRegisterHtml } from './views/register';
 
+type Route = 'login' | 'register' | '2fa' | 'dashboard' | 'game' | 'profile';
 
-const avatarImage = document.getElementById("profile-avatar-wrapper") as HTMLDivElement;
-const photoInput = document.getElementById("profile-photo-input") as HTMLInputElement;
-const avatar = document.getElementById("profile-avatar") as HTMLImageElement;
-
-avatarImage?.addEventListener("click", () => {
-	photoInput.click();
-});
-
-photoInput?.addEventListener("change", () => {
-	const file = photoInput.files?.[0];
-	if (!file) return;
-
-	avatar.src = URL.createObjectURL(file);
-});
-
-function renderDashboard(): void {
-    const username = AppState.currentUser ? AppState.currentUser.username : 'Visitante';
-    const usernameElement = document.getElementById('dashboard-username');
-    if (usernameElement) {
-        usernameElement.textContent = username;
-    }
-
-    const historyList = document.getElementById('match-history-list');
-    if (!historyList) return;
-
-    historyList.innerHTML = '';
-
-    if (AppState.matchHistory.length === 0) {
-        historyList.innerHTML = '<li>(Nenhuma partida jogada ainda)</li>';
-        return;
-    }
-
-    AppState.matchHistory.forEach((match: Match) => {
-        const li = document.createElement('li');
-        li.textContent = `${match.p1} (${match.scoreP1}) - (${match.scoreP2}) ${match.p2}`;
-        historyList.appendChild(li);
-    });
+const state = {
+	user: null as string | null,
+	isAuthenticated: false
 }
 
-function startGame(): void {
-    if (currentGame) {
-        currentGame.stopGame();
-        currentGame = null;
-    }
-
-    const canvas = document.getElementById('pongCanvas') as HTMLCanvasElement | null;
-    const player1ScoreElement = document.getElementById('player1Score');
-    const player2ScoreElement = document.getElementById('player2Score');
-
-    if (!canvas || !player1ScoreElement || !player2ScoreElement) {
-        console.error('Elementos da UI do jogo não encontrados');
-        return;
-    }
-
-    const gameUI = {
-        canvas,
-        player1ScoreElement,
-        player2ScoreElement,
-    };
-
-    currentGame = new PongGame(gameUI, (winnerName, score) => {
-        handleGameOver(winnerName, score);
-    });
-
-    currentGame.startGame();
+interface User {
+	username: string;
+	gang: 'batatas' | 'tomates';
+	isAnonymous: boolean
 }
 
+const app = document.querySelector<HTMLDivElement>('#app')!;
 
-function showRegisterError(message: string, inputId?: string) {
-	const errorMsg = document.getElementById("register-error-msg")!;
-	errorMsg.textContent = message;
-	errorMsg.classList.remove("hidden");
+function navigateTo(route: Route) {
+	if (route === 'dashboard' || route === 'profile' || route == 'game') {
+		if (!state.isAuthenticated) {
+			navigateTo('login');
+			return ;
+		}
+	}
 
-	document.querySelectorAll(".input-field").forEach((el) => {
-		el.classList.remove("input-error");
-	});
+	switch (route) {
+		case 'login':
+			app.innerHTML = getLoginHtml();
+			setupLoginEvents();
+			break;
 
-	if (inputId) {
-		const field = document.getElementById(inputId);
-		field?.classList.add("input-error");
-		field?.scrollIntoView({ behavior: "smooth", block: "center" });
+		case 'register':
+			app.innerHTML = getRegisterHtml();
+			setupRegisterEvents();
+			break;
+
+// 		case '2fa':
+// 			app.innerHTML = get2faHtml();
+// 			setup2faEvents();
+// 			break;
+
+		case 'dashboard':
+			app.innerHTML = getDashboardHtml();
+			setupDashboardEvents();
+			break;
+
+// 		case 'game':
+// 			app.innerHTML = getGameHtml();
+// 			setupGameEvents();
+// 			break;
+
+		case 'profile':
+			// if (user.isAnonymous) {
+			// 	navigateTo("dashboard")
+			// 	return;
+			// }
+
+			app.innerHTML = getProfileHtml();
+			setupProfileEvents();
+			break;
+
+		default:
+			navigateTo('login');
 	}
 }
 
-function setupTournamentTabs() {
-    const tabCreate = document.getElementById('tab-create');
-    const tabJoin = document.getElementById('tab-join');
+function setupLoginEvents() {
+	document.getElementById('btn-login-user')?.addEventListener('click', () => {
+		const user = (document.getElementById('input-login-user') as HTMLInputElement).value;
+		const pass = (document.getElementById('input-login-pass') as HTMLInputElement).value;
 
-    const contentCreate = document.getElementById('content-create');
-    const contentJoin = document.getElementById('content-join');
+		if (user && pass) {
+			// alert(`Tentando logar com usuário: ${user} e senha: ${pass}`);
+			state.isAuthenticated = true;
+			state.user = user;
+			navigateTo('dashboard');
+		}
+	})
 
-    if (!tabCreate || !tabJoin || !contentCreate || !contentJoin) {
-        console.warn("Tournament tabs: elementos não encontrados.");
-        return;
-    }
+	document.getElementById('btn-login-guest')?.addEventListener('click', () => {
+		const userAnonymous = (document.getElementById('input-login-guest') as HTMLInputElement).value;
 
-    tabCreate.addEventListener("click", () => {
-        contentCreate.classList.remove("hidden");
-        contentJoin.classList.add("hidden");
+		if (userAnonymous) {
+			alert(`Tentando logar como visitante com a senha: ${userAnonymous}`);
+		}
+	})
 
-        tabCreate.classList.add("active");
-        tabJoin.classList.remove("active");
-    });
-
-    tabJoin.addEventListener("click", () => {
-        contentJoin.classList.remove("hidden");
-        contentCreate.classList.add("hidden");
-
-        tabJoin.classList.add("active");
-        tabCreate.classList.remove("active");
-    });
+	document.getElementById('btn-register')?.addEventListener('click', () => {
+		navigateTo('register');
+	})
 }
 
+function setupRegisterEvents() {
+	document.getElementById('btn-register-back')?.addEventListener('click', () => {
+		navigateTo('login');
+	})
 
-function handleGameOver(winnerName: string, score: { p1: number; p2: number }): void {
-    console.log("Jogo terminou!", winnerName, score);
+	document.getElementById('btn-register-submit')?.addEventListener('click', () => {
+		const name = (document.getElementById('input-register-name') as HTMLInputElement).value;
+		const nick = (document.getElementById('input-register-nick') as HTMLInputElement).value;
+		const email = (document.getElementById('input-register-email') as HTMLInputElement).value;
+		const pass = (document.getElementById('input-register-pass') as HTMLInputElement).value;
+		const gang = (document.getElementById('select-register-gang') as HTMLSelectElement).value;
 
-    AppState.matchHistory.push({
-        p1: 'Visitante',
-        p2: 'Player 2',
-        scoreP1: score.p1,
-        scoreP2: score.p2,
-    });
-
-    currentGame = null;
-    navigateTo('/dashboard');
+		if (name && nick && email && pass && gang) {
+			showModal({
+				title: "Bem-vindo!",
+				message: `A conta de ${name} foi criada com sucesso. Prepare-se para a batalha!`,
+				type: "success",
+				confirmText: "Ir para Login",
+				onConfirm: () => {
+					navigateTo('login'); // Só navega quando o usuário clica no botão do modal
+				}
+			});
+		} else {
+			showModal({
+				title: "Erro no cadastro",
+				message: "Por favor, preencha todos os campos para criar sua conta.",
+				type: "danger",
+				confirmText: "Tentar novamente"
+			});
+		}
+	})
 }
 
-async function handleAnonymousLogin(): Promise<void> {
-    const guestNameInput = document.getElementById('guest-name-input') as HTMLInputElement;
-    const nick = guestNameInput?.value?.trim();
-
-    if (!nick) {
-        // Colocar vermelho
-        return ;
-    }
-
-    try {
-        const response = await fetch('http://localhost:3333/auth/anonymous', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ nick }),
-        });
-
-        const data = await response.json();
-
-        if (!response.ok) {
-            alert(data.error || 'Erro ao criar conta anônima');
-            // Colocar vermelho
-            return ;
-        }
-
-        localStorage.setItem('token', data.token);
-        AppState.currentUser = { username: data.user.nick, gang: data.user.gang };
-
-        navigateTo('/dashboard');
-
-    } catch (error) {
-        console.error('Erro ao fazer login anônimo:', error);
-    }
+function setup2faEvents() {
 
 }
 
+function setupDashboardEvents() {
+	document.getElementById('btn-dashboard-logout')?.addEventListener('click', () => {
+		showModal({
+			title: "Sair do Sistema",
+			message: "Tem certeza que deseja abandonar a arena? Seu progresso não salvo será perdido.",
+			type: "danger",
+			confirmText: "Sim, Sair",
+			cancelText: "Cancelar",
+			onConfirm: () => {
+				state.user = null;
+				state.isAuthenticated = false;
+				navigateTo('login');
+			}
+		});
+	})
 
-async function handleRegister(): Promise<void> {
-    const NameInput = document.getElementById('register-name-input') as HTMLInputElement;
-    const NickInput = document.getElementById('register-login-input') as HTMLInputElement;
-    const EmailInput = document.getElementById('register-email-input') as HTMLInputElement;
-    const PasswordInput = document.getElementById('register-password-input') as HTMLInputElement;
-    const GangInput = document.getElementById('register-gang-select') as HTMLInputElement;
+	document.getElementById('btn-dashboard-profile')?.addEventListener('click', () => {
+		navigateTo('profile');
+	})
+}
 
-    const name = NameInput?.value?.trim();
-    const nick = NickInput?.value?.trim();
-    const email = EmailInput?.value?.trim();
-    const password = PasswordInput?.value;
-    const gang = GangInput?.value;
-
-    if (!nick || !name || !email || !password || !gang) {
-        // Colocar vermelho
-        return ;
-    }
-
-    try {
-        const response = await fetch('http://localhost:3333/auth/register', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                "name": name,
-                "nick": nick,
-                "email": email,
-                "password": password,
-                "gang": gang
-             }),
-        });
-
-        const data = await response.json();
-
-        if (!response.ok) {
-            alert(data.error || 'Erro ao criar conta');
-            // Colocar vermelho
-            return ;
-        }
-
-        navigateTo('/');
-
-    } catch (error) {
-        console.error('Erro ao criar a conta:', error);
-    }
+function setupGameEvents() {
 
 }
 
+function setupProfileEvents() {
+	document.getElementById('btn-profile-back')?.addEventListener('click', () => {
+		navigateTo('dashboard');
+	})
 
-async function handleLogin(): Promise<void> {
-    const IdentifierInput = document.getElementById('login-username-input') as HTMLInputElement;
-    const PasswordInput = document.getElementById('login-password-input') as HTMLInputElement;
-   
+	document.getElementById('btn-profile-save')?.addEventListener('click', () => {
+		const name = (document.getElementById('input-profile-name') as HTMLInputElement).value;
 
-    const identifier = IdentifierInput?.value?.trim();
-    const password = PasswordInput?.value;
-
-
-    console.log("Deu ruim");
-    if (!identifier || !password) {
-        // Colocar vermelho
-        return ;
-    }
-
-    try {
-        const response = await fetch('http://localhost:3333/auth/login', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                "identifier": identifier,
-                "password": password,
-             }),
-        });
-
-        const data = await response.json();
-
-        if (!response.ok) {
-            alert(data.error || 'Erro ao tentar entrar na conta');
-            // Colocar vermelho
-            return ;
-        }
-
-        localStorage.setItem('token', data.token);
-        AppState.currentUser = { username: data.user.nick, gang: data.user.gang };
-
-        navigateTo('/dashboard');
-
-    } catch (error) {
-        console.error('Erro ao tentar entrar na conta:', error);
-    }
-
+		if (name) {
+			showModal({
+				title: "Perfil Atualizado",
+				message: `Seu nome de exibição foi alterado para ${name}. Continue dominando a arena!`,
+				type: "success",
+				confirmText: "Voltar ao Menu",
+				onConfirm: () => {
+					navigateTo('dashboard'); // Só navega quando o usuário clica no botão do modal
+				}
+			});
+		}
+	})
 }
 
-
-document.addEventListener('DOMContentLoaded', () => {
-    const loginGuestButton = document.getElementById('loginGuestButton');
-    const playGameButton = document.getElementById('playGameButton');
-    const quitGameButton = document.getElementById('quitGameButton');
-    const backToDashboardButton = document.getElementById('backToDashboardButton');
-    const registerButton = document.getElementById('registerSubmitButton');
-    const loginButton = document.getElementById('loginButton');
-
-    if (loginButton){
-        loginButton?.addEventListener('click', handleLogin);
-    }
-
-    if (registerButton) {
-        registerButton.addEventListener('click', handleRegister);
-    }
-
-    if (loginGuestButton) {
-        loginGuestButton.addEventListener('click', handleAnonymousLogin);
-    }
-
-    if (playGameButton) {
-        playGameButton.addEventListener('click', () => {
-            navigateTo('/game');
-        });
-    }
-
-    if (quitGameButton) {
-        quitGameButton.addEventListener('click', () => {
-            if (currentGame) {
-                currentGame.stopGame();
-                currentGame = null;
-            }
-            navigateTo('/dashboard');
-        });
-    }
-
-    if (backToDashboardButton) {
-        backToDashboardButton.addEventListener('click', () => {
-            navigateTo('/dashboard');
-        });
-    }
-
-    document.addEventListener('routeChange', (e: Event) => {
-        const customEvent = e as CustomEvent<{ viewId: string }>;
-        const viewId = customEvent.detail.viewId;
-
-        console.log(`Rota mudou para: ${viewId}`);
-
-        if (viewId === 'dashboard-view') {
-            renderDashboard();
-        }
-
-        if (viewId === 'game-view') {
-            startGame();
-        }
-
-        if (viewId === 'login-view') {
-            AppState.currentUser = null;
-            AppState.matchHistory = [];
-            if (currentGame) {
-                currentGame.stopGame();
-                currentGame = null;
-            }
-        }
-    });
-});
-
-window.addEventListener("DOMContentLoaded", () => {
-    setupTournamentTabs();
-});
+navigateTo('login');

@@ -1,4 +1,4 @@
 Front/dist/*
-Front/node_modules/*
-Back/node_modules/*
 Back/dist/*
+**/package-lock.json
+**/node_modules/*
