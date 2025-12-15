@@ -5,7 +5,7 @@ import fastify, { FastifyReply, FastifyRequest } from 'fastify'
 
 import swaggerPlugin from './plugins/swagger'
 import zodValidator from './plugins/zod-validator'
-import { authRoutes } from './routes/auth.routes'
+import { authRoutes, friendsRoutes } from './routes/auth.routes'
 
 dotenv.config()
 
@@ -21,14 +21,32 @@ app.register(swaggerPlugin)
 app.decorate('authenticate', async function (req: FastifyRequest, reply: FastifyReply) {
 	try {
 		await req.jwtVerify()
+
+		if (req.user.temp2FA) {
+			return reply.code(401).send({ error: 'Token temporário não é válido para esta ação' })
+		}
 	} catch {
 		return (reply.code(401).send({ error: 'Token Inválido' }))
 	}
 })
 
+app.decorate('authenticate2FA', async function (req: FastifyRequest, reply: FastifyReply) {
+	try {
+		await req.jwtVerify()
+		if (!req.user.temp2FA) {
+			return reply.code(401).send({ error: 'Token temporário inválido' })
+		}
+	} catch {
+		return reply.code(401).send({ error: 'Token Inválido' })
+	}
+})
+
+app.decorate('verifyUserExists', async function (req: FastifyRequest, reply: FastifyReply) {})
+
 // Rotas
 app.register(zodValidator)
 app.register(authRoutes, { prefix: '/auth'})
+app.register(friendsRoutes, { prefix: '/friends' })
 
 // Rodar
 app.listen({ port: 3333 }).then(() => {

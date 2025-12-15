@@ -86,7 +86,7 @@ export const loginRouteSchema = {
 export const anonymousRouteSchema = {
 	tags: ['auth'],
 	summary: 'Login anônimo',
-	description: 'Cria uma sessão temporária sem registro. Todos anônimos pertencem à gangue "batatas". Sessão expira em 2h ou após 5min de inatividade.',
+	description: 'Cria uma sessão temporária sem registro. Todos anônimos pertencem à gangue "potatoes". Sessão expira em 2h ou após 5min de inatividade.',
 	body: anonymousBodySchema,
 	response: {
 		200: {
@@ -104,7 +104,7 @@ export const anonymousRouteSchema = {
 						name: { type: 'string', examples: ['anonymous_visitante'] },
 						nick: { type: 'string', examples: ['anonymous_visitante'] },
 						isAnonymous: { type: 'boolean', examples: [true] },
-						gang: { type: 'string', examples: ['batatas'] }
+						gang: { type: 'string', examples: ['potatoes'] }
 					}
 				}
 			}

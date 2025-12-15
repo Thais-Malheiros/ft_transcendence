@@ -6,7 +6,7 @@ export const userResponseSchema = {
 		nick: { type: 'string', examples: ['joao123'] },
 		email: { type: 'string', examples: ['joao@example.com'] },
 		isAnonymous: { type: 'boolean', examples: [false] },
-		gang: { type: 'string', examples: ['batatas'] }
+		gang: { type: 'string', examples: ['potatoes'] }
 	}
 } as const
 

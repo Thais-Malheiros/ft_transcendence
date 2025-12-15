@@ -19,6 +19,7 @@ import {
 	RegisterInput,
 	registerSchema
 } from '../schemas/auth.schemas'
+import { FriendRequestSchema, FriendResponseSchema } from '../schemas/friends.schemas'
 import {
 	disable2FARouteSchema,
 	enable2FARouteSchema,
@@ -41,10 +42,14 @@ interface User {
 	password?: string;
 	isAnonymous: boolean;
 	lastActivity?: number;
-	gang: 'batatas' | 'tomates'
+	gang: 'potatoes' | 'tomatoes'
 	twoFactorEnabled?: boolean;
 	twoFactorSecret?: string;
 	backupCodes?: string[];
+
+	friends: number[];
+	friendRequestsSent: number[];
+	friendRequestsReceived: number[];
 }
 
 const ANONYMOUS_INACTIVITY_TIMEOUT	= 5 * 60 * 1000	// 5 minutos de inatividade
@@ -60,7 +65,8 @@ function sanitize(user: User) {
 		nick: user.nick,
 		email: user.isAnonymous ? undefined : user.email,
 		isAnonymous: user.isAnonymous,
-		gang: user.gang
+		gang: user.gang,
+		// friends: user.friends
 	}
 }
 
@@ -121,29 +127,6 @@ export async function authRoutes(app: FastifyInstance) {
 		}
 	})
 
-	app.decorate('authenticate', async function (req: FastifyRequest, reply: FastifyReply) {
-		try {
-			await req.jwtVerify()
-			// Bloquear tokens temporários 2FA
-			if (req.user.temp2FA) {
-				return reply.code(401).send({ error: 'Token temporário não é válido para esta ação' })
-			}
-		} catch {
-			return reply.code(401).send({ error: 'Token Inválido' })
-		}
-	})
-
-	app.decorate('authenticate2FA', async function (req: FastifyRequest, reply: FastifyReply) {
-		try {
-			await req.jwtVerify()
-			if (!req.user.temp2FA) {
-				return reply.code(401).send({ error: 'Token temporário inválido' })
-			}
-		} catch {
-			return reply.code(401).send({ error: 'Token Inválido' })
-		}
-	})
-
 	app.post('/register', {
 		schema: registerRouteSchema,
 		preHandler: app.validateBody(registerSchema)
@@ -165,7 +148,10 @@ export async function authRoutes(app: FastifyInstance) {
 			email: email,
 			password: passwordHash,
 			isAnonymous: false,
-			gang: gang
+			gang: gang,
+			friends: [],
+			friendRequestsSent: [],
+			friendRequestsReceived: []
 		}
 		users.push(user)
 
@@ -274,7 +260,10 @@ export async function authRoutes(app: FastifyInstance) {
 			email: `anonymous_${nextId}@local`,
 			isAnonymous: true,
 			lastActivity: Date.now(),
-			gang: Math.random() > 0.5 ? 'batatas' : 'tomates'
+			gang: Math.random() > 0.5 ? 'potatoes' : 'tomatoes',
+			friends: [],
+			friendRequestsSent: [],
+			friendRequestsReceived: []
 		}
 		users.push(user)
 
@@ -286,7 +275,7 @@ export async function authRoutes(app: FastifyInstance) {
 			gang: user.gang,
 		}, { expiresIn: '2h'})
 
-		console.log(`Anonimo ${nick} entrou`);
+		console.log(`Anonimo ${nick} entrou`)
 
 		return ( {token, user: sanitize(user)} )
 	})
@@ -411,4 +400,107 @@ export async function authRoutes(app: FastifyInstance) {
 
 		return (reply.code(200).send())
 	})
+
+}
+
+export async function friendsRoutes(app: FastifyInstance) {
+	const verifyUser = async (req: FastifyRequest, reply: FastifyReply) => {
+		const user = users.find(u => u.id === req.user.id)
+		if (!user) {
+			return reply.code(404).send({ error: 'Usuário não autenticado' })
+		}
+	}
+
+	app.get('/list', {
+		onRequest: [app.authenticate],
+		preHandler: [verifyUser]
+	}, async (req: FastifyRequest, reply) => {
+		const currentUser = users.find(u => u.id === req.user.id)!
+
+		const myFriends = users
+			.filter(u => currentUser.friends.includes(u.id))
+			.map(u => sanitize(u))
+
+		return reply.send(myFriends)
+	})
+
+	app.get('/users/:id', {
+		onRequest: [app.authenticate],
+		preHandler: [verifyUser, ]
+	}, async (req: FastifyRequest, reply) => {
+		const { id } = req.params as { id: string }
+		const targetId = parseInt(id)
+
+		const user = users.find(u => u.id === targetId)
+		if (!user) {
+			return (reply.code(404).send({ error: 'Usuário não encontrado' }))
+		}
+
+		return reply.send(sanitize(user))
+	})
+
+	app.post('/request', {
+		onRequest:[app.authenticate],
+		preHandler: app.validateBody(FriendRequestSchema)
+	}, async (req: FastifyRequest, reply) => {
+		const { nick } = req.body as { nick: string }
+		const sender = users.find(u => u.id === req.user.id)!
+
+		const target = users.find(u => u.nick === nick)
+
+		if(!target) {
+			return reply.code(404).send({ error: 'Usuário alvo não encontrado' })
+		}
+
+		if (target.id === sender.id) {
+			return reply.code(400).send({ error: 'Você não pode adicionar a si mesmo' })
+		}
+
+		if (sender.friends.includes(target.id)) {
+			return reply.code(400).send({ error: 'Vocês já são amigos' })
+		}
+
+		if (sender.friendRequestsSent.includes(target.id)) {
+			return reply.code(400).send({ error: 'Solicitação já enviada' })
+		}
+
+		if (sender.friendRequestsReceived.includes(target.id)) {
+			return reply.code(400).send({ error: 'Este usuário já te enviou uma solicitação. Aceite-a.' })
+		}
+
+		sender.friendRequestsSent.push(target.id)
+		target.friendRequestsReceived.push(sender.id)
+
+		return reply.send({ message: `Solicitação enviada para ${target.nick}` })
+	})
+
+	app.post('/response', {
+		onRequest: [app.authenticate],
+		preHandler: app.validateBody(FriendResponseSchema)
+	}, async (req: FastifyRequest, reply) => {
+		const { nick, action } = req.body as { nick:string, action: 'accept' | 'decline' }
+		const currentUser = users.find(u => u.id === req.user.id)!
+
+		const requester =users.find(u => u.nick === nick)
+
+		if (!requester) {
+			return reply.code(404).send({ error: 'Usuário não encontrado' })
+		}
+
+		if (!currentUser.friendRequestsReceived.includes(requester.id)) {
+			return reply.code(400).send({ error: 'Não há solicitação pendente deste usuário' })
+		}
+
+		currentUser.friendRequestsReceived = currentUser.friendRequestsReceived.filter(id => id !== requester.id)
+		requester.friendRequestsSent = requester.friendRequestsSent.filter(id => id !== currentUser.id)
+
+		if (action === 'accept') {
+			currentUser.friends.push(requester.id)
+			requester.friends.push(currentUser.id)
+			return reply.send({ message: `Agora você e ${requester.nick} são amigos!` })
+		} else {
+			return reply.send({ message: 'Solicitação recusada' })
+		}
+	})
+
 }

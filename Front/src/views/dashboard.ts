@@ -1,13 +1,20 @@
 import { DashboardItem } from "@/components/DashboardItem";
+import { state } from "@/main";
 
 export function getDashboardHtml() {
-  return `
-		<img src="src/assets/bg-login.png" alt="Background" class="fixed inset-0 w-full h-full object-cover -z-10 opacity-30" />
+	const selectedGang = state.user?.gang;
+
+	const bgSrc = `src/assets/bg-login-${selectedGang}.png`
+
+	const dashboardColor = selectedGang === "tomatoes" ? "text-red-500" : selectedGang === "potatoes" ? "text-yellow-500" : "text-cyan-500";
+
+	return `
+		<img id="bg-image" src="${bgSrc}" alt="Background" class="fixed inset-0 w-full h-full object-cover -z-10 opacity-30" />
 
 		<div class="min-h-screen p-6 flex flex-col items-center max-w-6xl mx-auto">
 
 			<div class="w-full flex justify-between items-end mb-10 border-b border-white/10 pb-4">
-				<h2 class="text-cyan-500 text-5xl font-bold tracking-widest drop-shadow-[0_0_15px_rgba(6,182,212,0.5)]">
+				<h2 class="${dashboardColor} text-5xl font-bold tracking-widest drop-shadow-[0_0_15px_rgba(6,182,212,0.5)]">
 					DASHBOARD
 				</h2>
 				<button id="btn-dashboard-logout" class="text-red-500 hover:text-red-400 hover:underline transition font-bold cursor-pointer">
@@ -34,9 +41,9 @@ export function getDashboardHtml() {
 				})}
 
 				${DashboardItem({
-					id: "btn-dashboard-champ",
-					title: "Campeonatos",
-					subtitle: "Suba no Ranking",
+					id: "btn-dashboard-leaderboard",
+					title: "Ranking",
+					subtitle: "Ver Posições",
 					icon: "🏆",
 					colorTheme: "green"
 				})}
@@ -67,5 +74,5 @@ export function getDashboardHtml() {
 
 			</div>
 		</div>
-  `;
+	`;
 }

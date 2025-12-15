@@ -20,8 +20,8 @@ export const registerSchema = z.object({
 		.regex(/[0-9]/, 'Senha deve conter ao menos um número')
 		.regex(/[\W_]/, 'Senha deve conter ao menos um caractere especial'),
 
-	gang: z.enum(['batatas', 'tomates'], {
-		message: 'Gang deve ser "batatas" ou "tomates"'
+	gang: z.enum(['potatoes', 'tomatoes'], {
+		message: 'Gang deve ser "potatoes" ou "tomatoes"'
 	})
 })
 

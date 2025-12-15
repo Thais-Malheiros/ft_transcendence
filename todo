@@ -1,0 +1,16 @@
+Rotas /friend
+	Arrumar schemas
+	Arrumar preHandler para validação
+	Testar os casos graciosos e casos de erro
+	Fazer rotas de apagar amigos
+	Desenhar fluxo
+
+Tela amigos
+	Arrumar desalinhamento das tabelas de amigos e solicitações
+
+Tela ranking
+	Analisar o código
+
+Front end
+	Fazer os componentes de icones
+	Fazer os botões de icones

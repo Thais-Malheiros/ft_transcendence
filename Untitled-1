@@ -1,0 +1,10 @@
+GET /friends/
+
+Listar todos os amigos do usuário
+
+{
+	"friends":
+	[
+		2, 5, 1, 9
+	]
+}

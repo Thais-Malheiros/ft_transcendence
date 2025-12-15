@@ -11,21 +11,20 @@ export function getLoginHtml() {
 				className: "max-w-md w-full text-center",
 				children: `
 
-					<h2 class="text-cyan-500 mb-4 text-5xl font-bold tracking-tighter drop-shadow-[0_0_10px_rgba(255,255,255,0.8)]">
-						<div class="text-yellow-400">
-							POTATOES
-						</div>
-						vs
-						<div class="text-red-400">
-							TOMATOES
-						</div>
+					<h2 class="text-cyan-500 mb-4 text-6xl font-bold tracking-tighter drop-shadow-[0_0_10px_rgba(255,255,255,1.8)] font-cartoon cartoon-title">
+					<div class="text-yellow-400 cartoon-title yellow">
+						POTATOES
+					</div>
+					<div class="text-cyan-300 text-4xl font-bold">vs</div>
+					<div class="text-red-600 cartoon-title red">
+						TOMATOES
+					</div>
 					</h2>
 
 					${Button({
 						id: "btn-register",
 						text: "Criar Conta",
 						variant: "secondary",
-						theme: "potatoes",
 						className: "mb-6"
 					})}
 
@@ -52,7 +51,6 @@ export function getLoginHtml() {
 						id: "btn-login-user",
 						text: "Entrar",
 						variant: "primary",
-						theme: "potatoes",
 						className: "mt-8"
 					})}
 

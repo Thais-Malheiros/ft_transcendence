@@ -1,6 +1,6 @@
 interface User {
     username: string;
-    gang: 'batatas' | 'tomates';
+    gang: 'potatoes' | 'tomatoes';
 }
 
 interface Match {

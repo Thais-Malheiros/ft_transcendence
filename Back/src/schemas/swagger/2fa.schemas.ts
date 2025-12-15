@@ -155,7 +155,7 @@ export const login2FARouteSchema = {
 						name: { type: 'string', examples: ['João Silva'] },
 						nick: { type: 'string', examples: ['joao123'] },
 						email: { type: 'string', examples: ['joao@example.com'] },
-						gang: { type: 'string', examples: ['batatas'] }
+						gang: { type: 'string', examples: ['potatoes'] }
 					}
 				}
 			}

@@ -2,6 +2,7 @@ interface ModalProps {
 	title: string;
 	message: string;
 	type?: "success" | "danger" | "info";
+	theme?: "default" | "potatoes" | "tomatoes";
 }
 
 const colors = {
@@ -10,14 +11,20 @@ const colors = {
 	info: "text-cyan-500 border-cyan-500"
 };
 
-export function ModalComponent({ title, message, type = "info" }: ModalProps) {
+const themeOverrides = {
+	default: "text-cyan-500 border-cyan-500",
+	potatoes: "text-yellow-500 border-yellow-500",
+	tomatoes: "text-red-500 border-red-500",
+};
 
-	const theme = colors[type];
+export function ModalComponent({ title, message, type = "info", theme = 'default' }: ModalProps) {
+
+	const themeColor = theme && theme !== 'default' ? themeOverrides[theme as keyof typeof themeOverrides] : colors[type];
 
 	return `
 		<div class="fixed inset-0 backdrop-blur-sm flex justify-center items-center p-4 animate-fade-in">
-			<div class="bg-slate-900 border ${theme.split(" ")[1]} border-2 rounded-2xl p-8 max-w-sm w-full shadow-[0_0_50px_rgba(0,0,0,0.5)] transform scale-100 transition-all">
-				<h3 class="text-3xl font-bold mb-4 ${theme.split(" ")[0]} text-center">
+			<div class="bg-slate-900 ${themeColor.split(" ")[1]} border-2 rounded-2xl p-8 max-w-sm w-full shadow-[0_0_50px_rgba(0,0,0,0.5)] transform scale-100 transition-all">
+				<h3 class="text-3xl font-bold mb-4 ${themeColor.split(" ")[0]} text-center">
 					${title}
 				</h3>
 

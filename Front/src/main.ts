@@ -2,19 +2,25 @@ import { api } from './services/api';
 import './style.css';
 import { showModal } from './utils/modalManager';
 import { getDashboardHtml } from './views/dashboard';
+import { getFriendsHtml } from './views/friends';
+import { getRankingHtml } from './views/ranking';
 
 import { getLoginHtml } from './views/login';
 import { getProfileHtml } from './views/profile';
-import { getRegisterHtml } from './views/register';
+import { getRegisterHtml, updateRegisterBg } from './views/register';
 
-type Route = 'login' | 'register' | '2fa' | 'dashboard' | 'game' | 'profile';
+type Route = 'login' | 'register' | '2fa' | 'dashboard' | 'game' | 'profile' | 'friends' | 'leaderboard';
 
-interface User {
+export interface User {
 	id: number;
 	name: string;
 	nick: string;
+	avatar?: string;
 	isAnonymous: boolean;
-	gang: 'batatas' | 'tomates'
+	score: number;
+	rank: number;
+	isOnline: boolean;
+	gang: 'potatoes' | 'tomatoes'
 }
 
 interface State {
@@ -108,6 +114,39 @@ function renderView(route: Route) {
 			setupProfileEvents();
 			break;
 
+		case 'friends':
+			if (state.user && state.user.isAnonymous) {
+				navigateTo("dashboard", false);
+				showModal({
+					title: "Acesso Negado",
+					message: "Usuários anônimos não podem acessar o perfil. Por favor, crie uma conta para personalizar seu perfil.",
+					type: "danger",
+					confirmText: "Voltar ao Menu"
+				});
+				return;
+			}
+
+			app.innerHTML = getFriendsHtml()
+			setupFriendsEvents();
+
+			break;
+
+		case 'leaderboard':
+			if (state.user && state.user.isAnonymous) {
+				navigateTo("dashboard", false);
+				showModal({
+					title: "Acesso Negado",
+					message: "Usuários anônimos não podem acessar o perfil. Por favor, crie uma conta para personalizar seu perfil.",
+					type: "danger",
+					confirmText: "Voltar ao Menu"
+				});
+				return;
+			}
+			app.innerHTML = getRankingHtml();
+			setupRankingEvents();
+
+			break;
+
 		default:
 			navigateTo('login');
 	}
@@ -152,7 +191,10 @@ function setupLoginEvents() {
 					name: response.user.name,
 					nick: response.user.nick,
 					gang: response.user.gang,
-					isAnonymous: response.user.isAnonymous
+					isAnonymous: response.user.isAnonymous,
+					isOnline: response.user.isOnline,
+					score: response.user.score,
+					rank: response.user.rank
 				};
 
 				localStorage.setItem('appState', JSON.stringify(state));
@@ -187,7 +229,10 @@ function setupLoginEvents() {
 					name: response.user.name,
 					nick: response.user.nick,
 					gang: response.user.gang,
-					isAnonymous: response.user.isAnonymous
+					isAnonymous: response.user.isAnonymous,
+					isOnline: response.user.isOnline,
+					score: response.user.score,
+					rank: response.user.rank
 				};
 				localStorage.setItem('appState', JSON.stringify(state));
 				navigateTo('dashboard');
@@ -204,7 +249,7 @@ function setupLoginEvents() {
 	})
 }
 
-function setupRegisterEvents() {
+export function setupRegisterEvents() {
 	document.getElementById('btn-register-back')?.addEventListener('click', () => {
 		navigateTo('login');
 	})
@@ -254,6 +299,8 @@ function setupRegisterEvents() {
 			});
 		}
 	})
+
+	document.getElementById('select-register-gang')?.addEventListener('change', updateRegisterBg);
 }
 
 function setup2faEvents() {
@@ -292,6 +339,14 @@ function setupDashboardEvents() {
 	document.getElementById('btn-dashboard-profile')?.addEventListener('click', () => {
 		navigateTo('profile');
 	})
+
+	document.getElementById('btn-dashboard-friends')?.addEventListener('click', () => {
+		navigateTo('friends');
+	})
+
+		document.getElementById('btn-dashboard-leaderboard')?.addEventListener('click', () => {
+		navigateTo('leaderboard');
+	})
 }
 
 function setupGameEvents() {
@@ -319,6 +374,18 @@ function setupProfileEvents() {
 				}
 			});
 		}
+	})
+}
+
+function setupFriendsEvents() {
+	document.getElementById('btn-friends-back')?.addEventListener('click', () => {
+		navigateTo('dashboard');
+	})
+}
+
+function setupRankingEvents() {
+	document.getElementById('btn-ranking-back')?.addEventListener('click', () => {
+		navigateTo('dashboard');
 	})
 }
 

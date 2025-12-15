@@ -1,0 +1,34 @@
+Feito:
+Minor: Custom-made design system with reusable components, including a proper color palette, typography, and icons (minimum: 10 reusable components).
+	Falta:
+		4 componentes
+Minor: Support for additional browsers.
+Major: Standard user management and authentication.
+	Falta:
+		Users can add other users as friends and see their online status.
+Minor: Implement a complete 2FA (Two-Factor Authentication) system for the users
+	Falta:
+		Front
+Major: Introduce an AI Opponent for games.
+	Falta:
+		Tudo
+Major: Implement a complete web-based game where users can play against each other.
+Minor: Game statistics and match history (requires a game module).
+	Falta:
+		Tudo
+		Show achievements and progression.
+Minor: Use an ORM for the database.
+	Falta:
+		Tudo
+Minor: Use a backend framework (Express, Fastify, NestJS, Django, etc.).
+
+Planejado apenas:
+Major: Remote players — Enable two players on separate computers to play the same game in real-time.
+Major: Multiplayer game (more than two players).
+	Talvez não tenha.
+Major: Implement a custom module that is not listed above.
+	o SPA
+Minor: Same as the major module but smaller in scope and less complex.
+	Separação de gangues e cores
+Minor: Game customization options
+	Power ups in game
