@@ -481,7 +481,7 @@ export async function friendsRoutes(app: FastifyInstance) {
 		const { nick, action } = req.body as { nick:string, action: 'accept' | 'decline' }
 		const currentUser = users.find(u => u.id === req.user.id)!
 
-		const requester =users.find(u => u.nick === nick)
+		const requester = users.find(u => u.nick === nick)
 
 		if (!requester) {
 			return reply.code(404).send({ error: 'Usuário não encontrado' })
@@ -503,4 +503,28 @@ export async function friendsRoutes(app: FastifyInstance) {
 		}
 	})
 
+	app.delete('/remove/:id', {
+		onRequest: [app.authenticate]
+	}, async (req: FastifyRequest, reply) => {
+		const { id } = req.params as { id: string }
+		const targetId = parseInt(id)
+
+		const currentUser = users.find(u => u.id === req.user.id)!
+
+		const targetUser = users.find(u => u.id === targetId)
+
+		if (!targetUser) {
+			return reply.code(404).send({ error: 'Usuário não encontrado' })
+		}
+
+		if (!currentUser.friends.includes(targetId)) {
+			return reply.code(400).send({ error: 'Vocês não são amigos' })
+		}
+
+		currentUser.friends = currentUser.friends.filter(friendId => friendId !== targetId)
+		targetUser.friends = targetUser.friends.filter(friendId => friendId !== currentUser.id)
+
+		console.log(`${currentUser.nick} removeu ${targetUser.nick} dos amigos.`)
+		return reply.send({ message: 'Amizade desfeita com sucesso' })
+	})
 }
