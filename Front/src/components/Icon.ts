@@ -1,9 +1,8 @@
 import { cn } from "@/utils/cn";
 
 interface IconProps {
-	name: string;
-	size?: "sm" | "md" | "lg" | "xl"
-	color?: string;
+	name: "check" | "x" | "trash" | "arrowLeft" | "heart" | "users";
+	size?: "sm" | "md" | "lg" | "xl";
 	className?: string;
 }
 
@@ -31,11 +30,22 @@ const sizeMap = {
 export function Icon({
 	name,
 	size = "md",
-	color = "currentColor",
 	className = "",
 }: IconProps): string {
 	const svg = icons[name] || icons.check;
 	const sizeClass = sizeMap[size];
+	let color = "currentColor";
+
+	if (name === "check")
+		color = "green";
+	else if (name === "x" || name === "trash")
+		color = "red";
+	else if (name === "arrowLeft")
+		color = "cyan";
+	else if (name === "heart")
+		color = "pink";
+	else if (name === "users")
+		color = "yellow";
 
 	return `
 		<span class="${cn(sizeClass, className)}" style="color: ${color};">

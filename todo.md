@@ -24,6 +24,10 @@ Front end
 	Tela solo / Ia
 	Tela de configuração
 	refatorar o main.ts
+	Arrumar foto de background para todas as telas
+
+Back end
+	Quando tem um token salvo e entra direto no dashboard, ele entra sem que a conta esteja criada
 
 Fazer componentes
 	componente texto para cores baseado em gangues
