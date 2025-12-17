@@ -8,6 +8,7 @@ import { getRankingHtml } from './views/ranking';
 import { getLoginHtml } from './views/login';
 import { getProfileHtml } from './views/profile';
 import { getRegisterHtml, updateRegisterBg } from './views/register';
+import { authService } from './services/authRoutes';
 
 type Route = 'login' | 'register' | '2fa' | 'dashboard' | 'game' | 'profile' | 'friends' | 'leaderboard';
 
@@ -119,7 +120,7 @@ function renderView(route: Route) {
 				navigateTo("dashboard", false);
 				showModal({
 					title: "Acesso Negado",
-					message: "Usuários anônimos não podem acessar o perfil. Por favor, crie uma conta para personalizar seu perfil.",
+					message: "Usuários anônimos não podem ter amigos. Por favor, crie uma conta para ser socializar.",
 					type: "danger",
 					confirmText: "Voltar ao Menu"
 				});
@@ -136,7 +137,7 @@ function renderView(route: Route) {
 				navigateTo("dashboard", false);
 				showModal({
 					title: "Acesso Negado",
-					message: "Usuários anônimos não podem acessar o perfil. Por favor, crie uma conta para personalizar seu perfil.",
+					message: "Usuários anônimos não podem acessar o leaderboard. Por favor, crie uma conta para acessar.",
 					type: "danger",
 					confirmText: "Voltar ao Menu"
 				});
@@ -175,14 +176,12 @@ function setupLoginEvents() {
 		const passInput = (document.getElementById('input-login-pass') as HTMLInputElement).value;
 
 		if (userInput && passInput) {
-			// Fazer requisição de login aqui
 			try {
-				const response = await api.post<{ token: string, user: User }>('/auth/login', {
-					"identifier": userInput,
-					"password": passInput
+				const response = await authService.login({
+					identifier: userInput,
+					password: passInput
 				});
 
-				// Salvar Token para o api.ts usar automaticamente nas próximas chamadas
 				localStorage.setItem('token', response.token);
 
 				state.isAuthenticated = true;
@@ -192,9 +191,13 @@ function setupLoginEvents() {
 					nick: response.user.nick,
 					gang: response.user.gang,
 					isAnonymous: response.user.isAnonymous,
-					isOnline: response.user.isOnline,
-					score: response.user.score,
-					rank: response.user.rank
+					// isOnline: response.user.isOnline,
+					// score: response.user.score,
+					// rank: response.user.rank
+					// Puxar dados do back end
+					isOnline: true,
+					score: 0,
+					rank: 0
 				};
 
 				localStorage.setItem('appState', JSON.stringify(state));
@@ -216,8 +219,8 @@ function setupLoginEvents() {
 
 		if (userAnonymous) {
 			try {
-				const response = await api.post<{ token: string, user: User }>('/auth/anonymous', {
-					"nick": userAnonymous
+				const response = await authService.createAnonymous({
+					nick: userAnonymous
 				});
 
 				localStorage.setItem('token', response.token);
@@ -230,9 +233,13 @@ function setupLoginEvents() {
 					nick: response.user.nick,
 					gang: response.user.gang,
 					isAnonymous: response.user.isAnonymous,
-					isOnline: response.user.isOnline,
-					score: response.user.score,
-					rank: response.user.rank
+					// isOnline: response.user.isOnline,
+					// score: response.user.score,
+					// rank: response.user.rank
+					// Puxar dados do back end
+					isOnline: true,
+					score: 0,
+					rank: 0
 				};
 				localStorage.setItem('appState', JSON.stringify(state));
 				navigateTo('dashboard');
@@ -259,16 +266,16 @@ export function setupRegisterEvents() {
 		const nick = (document.getElementById('input-register-nick') as HTMLInputElement).value;
 		const email = (document.getElementById('input-register-email') as HTMLInputElement).value;
 		const pass = (document.getElementById('input-register-pass') as HTMLInputElement).value;
-		const gang = (document.getElementById('select-register-gang') as HTMLSelectElement).value;
+		const gang = (document.getElementById('select-register-gang') as HTMLSelectElement).value as 'potatoes' | 'tomatoes';
 
 		if (name && nick && email && pass && gang) {
 			try {
-				await api.post('/auth/register', {
-					"name": name,
-					"nick": nick,
-					"email": email,
-					"password": pass,
-					"gang": gang
+				await authService.register({
+					name,
+					nick,
+					email,
+					password: pass,
+					gang
 				});
 
 				showModal({
@@ -319,9 +326,7 @@ function setupDashboardEvents() {
 
 				if (state.user && state.user.isAnonymous) {
 					try {
-						await api.post('/auth/logout', {
-							userId: state.user.id
-						});
+						await authService.logout();
 					} catch (error) {
 						// Tratar erro
 					}
