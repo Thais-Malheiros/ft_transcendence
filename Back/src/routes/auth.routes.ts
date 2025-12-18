@@ -19,7 +19,7 @@ import {
 	RegisterInput,
 	registerSchema
 } from '../schemas/auth.schemas'
-import { FriendRequestSchema, FriendResponseSchema } from '../schemas/friends.schemas'
+import { FriendRequestInput, FriendRequestSchema, FriendResponseInput, FriendResponseSchema, UserIDSchema, UserIDSchemaInput } from '../schemas/friends.schemas'
 import {
 	disable2FARouteSchema,
 	enable2FARouteSchema,
@@ -33,6 +33,7 @@ import {
 	meRouteSchema,
 	registerRouteSchema
 } from '../schemas/swagger/route.schemas'
+import { friendsListRouteSchema, getUserByIdRouteSchema, removeFriendRouteSchema, respondFriendRequestRouteSchema, sendFriendRequestRouteSchema } from '../schemas/swagger/friends.route.schemas'
 
 interface User {
 	id: number;
@@ -413,7 +414,8 @@ export async function friendsRoutes(app: FastifyInstance) {
 
 	app.get('/list', {
 		onRequest: [app.authenticate],
-		preHandler: [verifyUser]
+		preHandler: [verifyUser],
+		schema: friendsListRouteSchema
 	}, async (req: FastifyRequest, reply) => {
 		const currentUser = users.find(u => u.id === req.user.id)!
 
@@ -426,29 +428,29 @@ export async function friendsRoutes(app: FastifyInstance) {
 
 	app.get('/users/:id', {
 		onRequest: [app.authenticate],
-		preHandler: [verifyUser, ]
+		preHandler: [verifyUser, app.validateParams(UserIDSchema)],
+		schema: getUserByIdRouteSchema
 	}, async (req: FastifyRequest, reply) => {
-		const { id } = req.params as { id: string }
-		const targetId = parseInt(id)
+		const { id } = req.params as UserIDSchemaInput
 
-		const user = users.find(u => u.id === targetId)
+		const user = users.find(u => u.id === id)
 		if (!user) {
-			return (reply.code(404).send({ error: 'Usuário não encontrado' }))
+			return reply.code(404).send({ error: 'Usuário não encontrado' })
 		}
 
 		return reply.send(sanitize(user))
 	})
 
 	app.post('/request', {
-		onRequest:[app.authenticate],
-		preHandler: app.validateBody(FriendRequestSchema)
+		onRequest: [app.authenticate],
+		preHandler: [verifyUser, app.validateBody(FriendRequestSchema)],
+		schema: sendFriendRequestRouteSchema
 	}, async (req: FastifyRequest, reply) => {
-		const { nick } = req.body as { nick: string }
+		const { nick } = req.body as FriendRequestInput
 		const sender = users.find(u => u.id === req.user.id)!
-
 		const target = users.find(u => u.nick === nick)
 
-		if(!target) {
+		if (!target) {
 			return reply.code(404).send({ error: 'Usuário alvo não encontrado' })
 		}
 
@@ -476,11 +478,11 @@ export async function friendsRoutes(app: FastifyInstance) {
 
 	app.post('/response', {
 		onRequest: [app.authenticate],
-		preHandler: app.validateBody(FriendResponseSchema)
+		preHandler: [verifyUser, app.validateBody(FriendResponseSchema)],
+		schema: respondFriendRequestRouteSchema
 	}, async (req: FastifyRequest, reply) => {
-		const { nick, action } = req.body as { nick:string, action: 'accept' | 'decline' }
+		const { nick, action } = req.body as FriendResponseInput
 		const currentUser = users.find(u => u.id === req.user.id)!
-
 		const requester = users.find(u => u.nick === nick)
 
 		if (!requester) {
@@ -504,24 +506,24 @@ export async function friendsRoutes(app: FastifyInstance) {
 	})
 
 	app.delete('/remove/:id', {
-		onRequest: [app.authenticate]
+		onRequest: [app.authenticate],
+		preHandler: [verifyUser, app.validateParams(UserIDSchema)],
+		schema: removeFriendRouteSchema
 	}, async (req: FastifyRequest, reply) => {
-		const { id } = req.params as { id: string }
-		const targetId = parseInt(id)
+		const { id } = req.params as UserIDSchemaInput
 
 		const currentUser = users.find(u => u.id === req.user.id)!
-
-		const targetUser = users.find(u => u.id === targetId)
+		const targetUser = users.find(u => u.id === id)
 
 		if (!targetUser) {
 			return reply.code(404).send({ error: 'Usuário não encontrado' })
 		}
 
-		if (!currentUser.friends.includes(targetId)) {
+		if (!currentUser.friends.includes(id)) {
 			return reply.code(400).send({ error: 'Vocês não são amigos' })
 		}
 
-		currentUser.friends = currentUser.friends.filter(friendId => friendId !== targetId)
+		currentUser.friends = currentUser.friends.filter(friendId => friendId !== id)
 		targetUser.friends = targetUser.friends.filter(friendId => friendId !== currentUser.id)
 
 		console.log(`${currentUser.nick} removeu ${targetUser.nick} dos amigos.`)

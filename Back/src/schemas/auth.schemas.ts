@@ -1,48 +1,55 @@
 import { z } from 'zod'
 
+const name = z.string()
+	.min(3, 'Nome deve ter no mínimo 3 caracteres')
+	.max(50, 'Nome deve ter no máximo 50 caracteres')
+	.regex(/^[a-zA-ZÀ-ÿ\s]+$/, 'Nome deve conter apenas letras e espaços')
+
+export const nick = z.string()
+	.min(3, 'Nick deve ter no mínimo 3 caracteres')
+	.max(20, 'Nick deve ter no máximo 20 caracteres')
+	.regex(/^[a-zA-Z0-9_]+$/, 'Nick deve conter apenas letras, números e underscores')
+
+const password = z.string()
+	.min(8, 'Senha deve ter no mínimo 8 caracteres')
+	.regex(/[A-Z]/, 'Senha deve conter ao menos uma letra maiúscula')
+	.regex(/[a-z]/, 'Senha deve conter ao menos uma letra minúscula')
+	.regex(/[0-9]/, 'Senha deve conter ao menos um número')
+	.regex(/[\W_]/, 'Senha deve conter ao menos um caractere especial')
+
+const gangEnum = ['potatoes', 'tomatoes'] as const
+
 export const registerSchema = z.object({
-	name: z.string()
-		.min(3, 'Nome deve ter no mínimo 3 caracteres')
-		.max(50, 'Nome deve ter no máximo 50 caracteres')
-		.regex(/^[a-zA-ZÀ-ÿ\s]+$/, 'Nome deve conter apenas letras e espaços'),
-
-	nick: z.string()
-		.min(3, 'Nick deve ter no mínimo 3 caracteres')
-		.max(20, 'Nick deve ter no máximo 20 caracteres')
-		.regex(/^[a-zA-Z0-9_]+$/, 'Nick deve conter apenas letras, números e underscores'),
-
+	name: name,
+	nick: nick,
 	email: z.email('Email inválido'),
-
-	password: z.string()
-		.min(8, 'Senha deve ter no mínimo 8 caracteres')
-		.regex(/[A-Z]/, 'Senha deve conter ao menos uma letra maiúscula')
-		.regex(/[a-z]/, 'Senha deve conter ao menos uma letra minúscula')
-		.regex(/[0-9]/, 'Senha deve conter ao menos um número')
-		.regex(/[\W_]/, 'Senha deve conter ao menos um caractere especial'),
-
-	gang: z.enum(['potatoes', 'tomatoes'], {
+	password: password,
+	gang: z.enum(gangEnum, {
 		message: 'Gang deve ser "potatoes" ou "tomatoes"'
 	})
 })
 
 export const loginSchema = z.object({
 	identifier: z.string()
+		// validar se é email ou nick
 		.min(2, 'Identificador deve ter no mínimo 2 caracteres'),
 
-	password: z.string()
-		.min(8, 'Senha deve ter no mínimo 8 caracteres')
+	password: password
 })
 
 export const anonymousSchema = z.object({
-	nick: z.string()
-		.min(3, 'Nome deve ter no mínimo 3 caracteres')
-		.max(50, 'Nome deve ter no máximo 50 caracteres')
-		.regex(/^[a-zA-Z0-9_]+$/, 'Nick deve conter apenas letras, números e underscore'),
+	nick: nick
 })
 
 const tokenValidation = z.string()
 	.length(6, 'Token deve ter 6 digitos')
 	.regex(/^[0-9]+$/, 'Token deve conter apenas números')
+
+// const backupCodeValidation = z.string()
+// 	.length(9, 'Backup code deve ter 9 caracteres no formato XXXX-XXXX')
+// 	.regex(/^[A-Z0-9]{4}-[A-Z0-9]{4}$/i, 'Backup code deve estar no formato XXXX-XXXX')
+
+// const twoFATokenValidation = z.union([tokenValidation, backupCodeValidation])
 
 export const enable2FASchema = z.object({
 	token: tokenValidation,

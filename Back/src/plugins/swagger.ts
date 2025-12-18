@@ -22,7 +22,8 @@ async function swaggerPlugin(app: FastifyInstance) {
 				}
 			],
 			tags: [
-				{ name: 'auth', description: 'Endpoints de autenticação' }
+				{ name: 'auth', description: 'Endpoints de autenticação' },
+				{ name: 'friends', description: 'Endpoints de gerenciamento de amigos' }
 			],
 			components: {
 				securitySchemes: {

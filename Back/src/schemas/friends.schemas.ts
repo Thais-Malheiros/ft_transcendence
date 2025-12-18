@@ -1,28 +1,26 @@
 import { z } from 'zod'
 
+import { nick } from './auth.schemas'
+
 export const FriendRequestSchema = z.object({
-	nick: z.string()
-		.min(3, 'Nick deve ter no mínimo 3 caracteres')
-		.max(20, 'Nick deve ter no máximo 20 caracteres')
-		.regex(/^[a-zA-Z0-9_]+$/, 'Nick deve conter apenas letras, números e underscores')
+	nick: nick
 })
 
 export const FriendResponseSchema = z.object({
-	nick: z.string()
-		.min(3, 'Nick deve ter no mínimo 3 caracteres')
-		.max(20, 'Nick deve ter no máximo 20 caracteres')
-		.regex(/^[a-zA-Z0-9_]+$/, 'Nick deve conter apenas letras, números e underscores'),
+	nick: nick,
 
 	action: z.enum(['accept', 'decline'], {
 		message: 'Ação deve ser "accept" ou "decline"'
 	})
 })
 
+const idValidation = z.string()
+	.regex(/^\d+$/, 'ID deve conter apenas números')
+	.transform(Number)
+	.refine(val => val > 0, 'ID deve ser maior que zero')
+
 export const UserIDSchema = z.object({
-	id: z.string()
-		.regex(/^\d+$/, 'ID deve conter apenas números')
-		.transform(Number)
-		.refine(val => val > 0, 'ID deve ser maior que zero')
+	id: idValidation
 })
 
 export type FriendRequestInput = z.infer<typeof FriendRequestSchema>
