@@ -387,7 +387,7 @@ function setup2faEvents() {
 	});
 
 	document.getElementById('btn-2fa-back')?.addEventListener('click', () => {
-		navigateTo('dashboard');
+		navigateTo('settings');
 	});
 }
 
