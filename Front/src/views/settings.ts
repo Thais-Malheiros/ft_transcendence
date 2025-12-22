@@ -19,10 +19,6 @@ export function getSettingsHtml() {
 		? "Autenticação em duas etapas está ativa."
 		: "Autenticação em duas etapas está desativada.";
 
-	const twoFAButtonText = has2FA
-		? "2FA Ativo"
-		: "Ativar 2FA";
-
 	return `
 		<img
 			src="${bgSrc}"
@@ -52,7 +48,7 @@ export function getSettingsHtml() {
 				<!-- Security Section -->
 				<div class="bg-slate-900/40 backdrop-blur-md border border-white/10 rounded-xl p-6">
 					<h3 class="text-xl font-bold text-white mb-4">
-						Segurança🔒
+						Segurança 🔒
 					</h3>
 
 					<div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
@@ -66,16 +62,37 @@ export function getSettingsHtml() {
 							</p>
 						</div>
 
-						<button
-							id="btn-settings-2fa"
-							class="px-5 py-2 rounded-lg font-bold transition
-								${has2FA
-									? 'bg-green-600/20 text-green-400 cursor-default'
-									: 'bg-cyan-600 hover:bg-cyan-500 text-black'}
-							"
-						>
-							${twoFAButtonText}
-						</button>
+						<!-- 2FA Actions -->
+						<div class="flex flex-col gap-2 min-w-[160px]">
+
+							${
+								has2FA
+									? `
+										<button
+											id="btn-settings-2fa-status"
+											class="px-5 py-2 rounded-lg font-bold bg-green-600/20 text-green-400 cursor-default"
+										>
+											2FA Ativo
+										</button>
+
+										<button
+											id="btn-settings-2fa-disable"
+											class="px-5 py-2 rounded-lg font-bold bg-red-600 hover:bg-red-500 text-white transition"
+										>
+											Desativar 2FA
+										</button>
+									`
+									: `
+										<button
+											id="btn-settings-2fa-enable"
+											class="px-5 py-2 rounded-lg font-bold bg-cyan-600 hover:bg-cyan-500 text-black transition"
+										>
+											Ativar 2FA
+										</button>
+									`
+							}
+
+						</div>
 
 					</div>
 				</div>
@@ -84,3 +101,4 @@ export function getSettingsHtml() {
 		</div>
 	`;
 }
+

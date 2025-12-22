@@ -227,7 +227,7 @@ function setupLoginEvents() {
 					isOnline: true,
 					score: 0,
 					rank: 0,
-					has2FA: false
+					has2FA: true
 				};
 
 				localStorage.setItem('appState', JSON.stringify(state));
@@ -498,24 +498,28 @@ function setupRankingEvents() {
 function setupSettingsEvents() {
 	document.getElementById('btn-settings-back')?.addEventListener('click', () => {
 		navigateTo('dashboard');
-	})
-	
-	document.getElementById('btn-settings-2fa')?.addEventListener('click', () => {
-		const has2FA = state.user?.has2FA ?? false;
-		// 🔐 2FA já ativado → apenas informa
-		if (has2FA) {
-			showModal({
-				title: "2FA já configurado",
-				message: "A autenticação em duas etapas já está ativa nesta conta. Sua segurança está reforçada.",
-				type: "success",
-				confirmText: "Entendi"
-			});
-			return;
-		}
-	
-		// 🔓 2FA desativado → vai para setup
+	});
+
+	document.getElementById('btn-settings-2fa-enable')?.addEventListener('click', () => {
 		navigateTo('2fa');
-	})
+	});
+
+	document.getElementById('btn-settings-2fa-disable')?.addEventListener('click', () => {
+		showModal({
+			title: "Desativar autenticação em duas etapas",
+			message: "Tem certeza que deseja desativar o 2FA? Isso reduzirá a segurança da sua conta.",
+			type: "danger",
+			confirmText: "Desativar",
+			cancelText: "Cancelar",
+			onConfirm: () => {
+				if (state.user) {
+					state.user.has2FA = false;
+					localStorage.setItem('appState', JSON.stringify(state));
+				}
+				navigateTo('settings');
+			}
+		});
+	});
 }
 
 function initializeRoute() {
