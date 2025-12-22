@@ -9,8 +9,9 @@ import { authService } from './services/authRoutes';
 import { getLoginHtml } from './views/login';
 import { getProfileHtml } from './views/profile';
 import { getRegisterHtml, updateRegisterBg } from './views/register';
+import { getSettingsHtml } from './views/settings';
 
-type Route = 'login' | 'register' | '2fa' | 'dashboard' | 'game' | 'profile' | 'friends' | 'leaderboard';
+type Route = 'login' | 'register' | '2fa' | 'dashboard' | 'game' | 'profile' | 'friends' | 'leaderboard' | 'settings';
 
 export interface User {
 	id: number;
@@ -159,6 +160,21 @@ function renderView(route: Route) {
 			app.innerHTML = getRankingHtml();
 			setupRankingEvents();
 
+			break;
+
+		case 'settings':
+			if (state.user && state.user.isAnonymous) {
+				navigateTo("dashboard", false);
+				showModal({
+					title: "Acesso Negado",
+					message: "Usuários anônimos não podem acessar as configurações. Por favor, crie uma conta para acessar.",
+					type: "danger",
+					confirmText: "Voltar ao Menu"
+				});
+				return;
+			}
+			app.innerHTML = getSettingsHtml();
+			setupSettingsEvents();
 			break;
 
 		default:
@@ -413,7 +429,7 @@ function setupDashboardEvents() {
 		document.getElementById('btn-dashboard-leaderboard')?.addEventListener('click', () => {
 		navigateTo('leaderboard');
 	})
-
+/* 
 		document.getElementById('btn-dashboard-2FA')?.addEventListener('click', () => {
 
 			const has2FA = state.user?.has2FA ?? false;
@@ -431,7 +447,12 @@ function setupDashboardEvents() {
 		
 			// 🔓 2FA desativado → vai para setup
 			navigateTo('2fa');
-	})
+	}) */
+
+		document.getElementById('btn-dashboard-config')?.addEventListener('click', () => {
+				navigateTo('settings');
+	});
+
 }
 
 function setupGameEvents() {
@@ -471,6 +492,29 @@ function setupFriendsEvents() {
 function setupRankingEvents() {
 	document.getElementById('btn-ranking-back')?.addEventListener('click', () => {
 		navigateTo('dashboard');
+	})
+}
+
+function setupSettingsEvents() {
+	document.getElementById('btn-settings-back')?.addEventListener('click', () => {
+		navigateTo('dashboard');
+	})
+	
+	document.getElementById('btn-settings-2fa')?.addEventListener('click', () => {
+		const has2FA = state.user?.has2FA ?? false;
+		// 🔐 2FA já ativado → apenas informa
+		if (has2FA) {
+			showModal({
+				title: "2FA já configurado",
+				message: "A autenticação em duas etapas já está ativa nesta conta. Sua segurança está reforçada.",
+				type: "success",
+				confirmText: "Entendi"
+			});
+			return;
+		}
+	
+		// 🔓 2FA desativado → vai para setup
+		navigateTo('2fa');
 	})
 }
 
