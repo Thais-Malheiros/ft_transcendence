@@ -27,13 +27,6 @@ export function get2FADisableHtml() {
 						Para sua segurança, confirme sua senha para desativar a autenticação em duas etapas.
 					</p>
 
-					${Input({
-						id: "input-2fa-disable-password",
-						type: "password",
-						placeholder: "Digite sua senha",
-						className: "mb-6"
-					})}
-
                     ${Input({
                         id: "input-2fa-disable-token",
                         placeholder: "000 000",
