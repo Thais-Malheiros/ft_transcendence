@@ -578,6 +578,87 @@ function setupFriendsEvents() {
             }
 		}
 	})
+
+	const requestsContainer = document.querySelector('.overflow-y-auto'); // Ajuste o seletor para o container das solicitações
+	document.addEventListener('click', async (e) => {
+        const target = e.target as HTMLElement;
+        const btn = target.closest('.btn-request-action') as HTMLElement;
+
+        if (btn) {
+            const nick = btn.getAttribute('data-nick');
+            const action = btn.getAttribute('data-action') as 'accept' | 'decline';
+            const id = btn.getAttribute('data-id');
+
+            if (!nick || !action) return;
+
+            try {
+                const response = await friendsService.respondFriendRequest({
+                    nick: nick,
+                    action: action
+                });
+
+                showModal({
+                    title: action === 'accept' ? "Sucesso!" : "Recusado",
+                    message: response.message,
+                    type: "success",
+                    confirmText: "OK",
+                    onConfirm: () => {
+                        navigateTo('friends', false);
+                    }
+                });
+            } catch (error: any) {
+                showModal({
+                    title: "Erro",
+                    message: error.message || "Não foi possível processar a solicitação",
+                    type: "danger",
+                    confirmText: "Tentar novamente"
+                });
+            }
+        }
+    });
+
+	document.addEventListener('click', async (e) => {
+        const target = e.target as HTMLElement;
+        const removeBtn = target.closest('.btn-friend-remove') as HTMLElement;
+
+        if (removeBtn) {
+            const friendId = removeBtn.getAttribute('data-id');
+            const friendName = removeBtn.getAttribute('data-name');
+
+            if (!friendId) return;
+
+            showModal({
+                title: "Remover Amigo",
+                message: `Tem certeza que deseja remover ${friendName} da sua lista de amigos?`,
+                type: "danger",
+                confirmText: "Remover",
+                cancelText: "Cancelar",
+                onConfirm: async () => {
+                    try {
+						console.log("ID que está indo para a URL:", friendId);
+                        const response = await friendsService.removeFriend(Number(friendId));
+
+                        showModal({
+                            title: "Sucesso",
+                            message: response.message,
+                            type: "success",
+                            confirmText: "OK",
+                            onConfirm: () => {
+                                navigateTo('friends', false);
+                            }
+                        });
+                    } catch (error: any) {
+                        showModal({
+                            title: "Erro",
+                            message: error.message || "Não foi possível remover o amigo",
+                            type: "danger",
+                            confirmText: "Tentar novamente"
+                        });
+                    }
+                }
+            });
+        }
+    });
 }
 
 function setupRankingEvents() {

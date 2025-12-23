@@ -55,5 +55,10 @@ export const friendsService = {
 		api.post<FriendResponseResponse>("/friends/response", data),
 
 	removeFriend: (id: string | number): Promise<RemoveFriendResponse> =>
-		api.delete<RemoveFriendResponse>(`/friends/remove/${id}`),
+		api.delete<RemoveFriendResponse>(`/friends/remove/${id}`, {}),
+
+	listIncomingRequests(): Promise<FriendsListResponse[]> {
+    return api.get('/friends/requests/received');
+}
+
 };

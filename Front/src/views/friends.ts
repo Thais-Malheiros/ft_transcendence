@@ -24,25 +24,6 @@ const backgroundByGang = {
 	tomatoes: 'src/assets/bg-login-tomatoes.png',
 };
 
-// Mock de dados
-const mockFriends: Friend[] = [
-	{ id: 1, name: "Batata_Assassina", avatar: "src/assets/perfil-inexistente.png", isOnline: true },
-	{ id: 2, name: "Tomate_Guerreiro", avatar: "src/assets/perfil-tomate.png", isOnline: false },
-	{ id: 3, name: "Tomate_Guerreiro", avatar: "src/assets/perfil-tomate.png", isOnline: false },
-	{ id: 4, name: "Tomate_Guerreiro", avatar: "src/assets/perfil-tomate.png", isOnline: false },
-	{ id: 5, name: "Tomate_Guerreiro", avatar: "src/assets/perfil-tomate.png", isOnline: false },
-	{ id: 6, name: "Tomate_Guerreiro", avatar: "src/assets/perfil-tomate.png", isOnline: false },
-	{ id: 7, name: "Tomate_Guerreiro", avatar: "src/assets/perfil-tomate.png", isOnline: false },
-	{ id: 8, name: "Tomate_Guerreiro", avatar: "src/assets/perfil-tomate.png", isOnline: false },
-	{ id: 9, name: "Tomate_Guerreiro", avatar: "src/assets/perfil-tomate.png", isOnline: false },
-	{ id: 10, name: "Tomate_Guerreiro", avatar: "src/assets/perfil-tomate.png", isOnline: false },
-	{ id: 11, name: "Tomate_Guerreiro", avatar: "src/assets/perfil-tomate.png", isOnline: false },
-	{ id: 12, name: "Tomate_Guerreiro", avatar: "src/assets/perfil-tomate.png", isOnline: false },
-	{ id: 13, name: "Tomate_Guerreiro", avatar: "src/assets/perfil-tomate.png", isOnline: false },
-	{ id: 14, name: "Tomate_Guerreiro", avatar: "src/assets/perfil-tomate.png", isOnline: false },
-	{ id: 15, name: "Mr_Chips", avatar: "src/assets/perfil-batata.png", isOnline: true },
-];
-
 const mockRequests: FriendRequest[] = [
 	{ id: 102, name: "Dr_Brocolis_O_Destruidor_De_Mundos", avatar: "src/assets/avatar-broc.png" },
 	{ id: 101, name: "Cebola_Chorona", avatar: "src/assets/avatar-onion.png" },
@@ -57,39 +38,39 @@ function formatName(name: string): string {
 	return name.substring(0, 20) + '...';
 }
 
-function renderRequestItem(request: FriendRequest): string {
-	const displayName = formatName(request.name);
+function renderRequestItem(request: any): string {
+    const displayNick = formatName(request.nick);
 
-	return `
-		<div class="flex items-center justify-between p-3 bg-black/20 rounded-lg border border-white/5 mb-2 w-full">
-			<div class="flex items-center gap-3 min-w-0 overflow-hidden mr-2">
-				<div class="w-8 h-8 shrink-0 rounded-full bg-slate-700 overflow-hidden border border-white/10">
-					<img src="${request.avatar}" alt="${request.name}" class="w-full h-full object-cover" onerror="this.src='https://ui-avatars.com/api/?name=${request.name}&background=random'"/>
-				</div>
-				<span class="text-sm md:text-xs lg:text-sm text-gray-200 font-bold whitespace-nowrap" title="${request.name}">
-					${displayName}
-				</span>
-			</div>
+    return `
+        <div class="flex items-center justify-between p-3 bg-black/20 rounded-lg border border-white/5 mb-2 w-full">
+            <div class="flex items-center gap-3 min-w-0 overflow-hidden mr-2">
+                <div class="w-8 h-8 shrink-0 rounded-full bg-slate-700 overflow-hidden border border-white/10">
+                    <img src="${request.avatar}" alt="${request.nick}" class="w-full h-full object-cover" onerror="this.src='https://ui-avatars.com/api/?name=${request.name}&background=random'"/>
+                </div>
+                <span class="text-sm text-gray-200 font-bold whitespace-nowrap">
+                    ${displayNick}
+                </span>
+            </div>
 
-			<div class="flex gap-1 shrink-0">
-				${Button({
-					id: `btn-friends-accept-${request.id}`,
-					variant: "ghost",
-					icon: "check",
-					title: "Aceitar",
-					className: "btn-friends-accept"
-				})}
+            <div class="flex gap-1 shrink-0">
+                ${Button({
+                    id: `btn-accept-${request.id}`,
+                    variant: "ghost",
+                    icon: "check",
+                    className: "btn-request-action",
+                    attributes: `data-action="accept" data-nick="${request.nick}" data-id="${request.id}"`
+                })}
 
-				${Button({
-					id: `btn-friends-deny-${request.id}`,
-					variant: "ghost",
-					icon: "x",
-					title: "Recusar",
-					className: "btn-friends-deny"
-				})}
-			</div>
-		</div>
-	`;
+                ${Button({
+                    id: `btn-deny-${request.id}`,
+                    variant: "ghost",
+                    icon: "x",
+                    className: "btn-request-action",
+                    attributes: `data-action="decline" data-nick="${request.nick}" data-id="${request.id}"`
+                })}
+            </div>
+        </div>
+    `;
 }
 
 function renderFriendItem(friend: Friend): string {
@@ -121,6 +102,7 @@ function renderFriendItem(friend: Friend): string {
 					variant: "ghost",
 					icon: "trash",
 					className: "btn-friend-remove",
+					attributes: `data-id="${friend.id}" data-name="${friend.name}"`
 				})}
 			</div>
 		</div>
@@ -144,6 +126,7 @@ export async function getFriendsHtml() {
 	let friendsListHtml: string = '';
 	let mappedFriends;
 	let friendCount: Number = 0;
+	let requestscount: Number = 0;
 
 	try {
 		const friendsList = await friendsService.listFriends();
@@ -171,9 +154,19 @@ export async function getFriendsHtml() {
 	}
 
 
-	const requestsListHtml = mockRequests.length > 0
-		? mockRequests.map(renderRequestItem).join('')
-		: `<div class="text-center py-4 text-gray-500 text-sm italic">Nenhuma solicitação pendente.</div>`;
+	let requestsListHtml = '';
+
+	try {
+    	const incomingRequests = await friendsService.listIncomingRequests();
+		requestscount = incomingRequests.length;
+
+    	requestsListHtml = incomingRequests.length > 0
+        	? incomingRequests.map(renderRequestItem).join('')
+        	: `<div class="text-center py-4 text-gray-500 text-sm italic">Nenhuma solicitação pendente.</div>`;
+
+	} catch (error) {
+    	console.error('Erro ao carregar solicitações:', error);
+	}
 
 	return `
 		<img src="${backgroundImage}" alt="Background" class="fixed inset-0 w-full h-full object-cover -z-10 opacity-30" />
@@ -223,7 +216,7 @@ export async function getFriendsHtml() {
 							<h3 class="text-base md:text-lg text-white font-bold flex items-center gap-2">
 								<span class="text-pink-400">💌</span> Solicitações
 							</h3>
-							${mockRequests.length > 0 ? `<span class="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full animate-pulse">${mockRequests.length}</span>` : ''}
+							${requestscount > 0 ? `<span class="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full animate-pulse">${requestscount}</span>` : ''}
 						</div>
 
 						<div class="flex flex-col flex-1 overflow-y-auto overflow-x-hidden pr-1 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-track]:bg-white/2 [&::-webkit-scrollbar-track]:rounded [&::-webkit-scrollbar-thumb]:bg-cyan-600/30 [&::-webkit-scrollbar-thumb]:rounded [&::-webkit-scrollbar-thumb]:hover:bg-cyan-600/80">

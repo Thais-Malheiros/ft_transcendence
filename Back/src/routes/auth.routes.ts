@@ -80,6 +80,14 @@ function sanitizeFriends(user: User) {
 	}
 }
 
+function sanitizeRequestsFriends(user: User) {
+	return {
+		id: user.id,
+		nick: user.nick,
+		avatar: "src/assets/perfil-sla.png"
+	}
+}
+
 function findByIdentifier(identifier: string): User | undefined {
 	return (users.find(u =>
 		(u.email === identifier || u.nick === identifier) && !u.isAnonymous
@@ -538,4 +546,17 @@ export async function friendsRoutes(app: FastifyInstance) {
 		console.log(`${currentUser.nick} removeu ${targetUser.nick} dos amigos.`)
 		return reply.send({ message: 'Amizade desfeita com sucesso' })
 	})
+
+	app.get('/requests/received', {
+        onRequest: [app.authenticate],
+        preHandler: [verifyUser],
+    }, async (req: FastifyRequest, reply) => {
+        const currentUser = users.find(u => u.id === req.user.id)!
+
+        const incomingRequests = users
+            .filter(u => currentUser.friendRequestsReceived.includes(u.id))
+            .map(u => sanitizeRequestsFriends(u))
+
+        return reply.send(incomingRequests)
+    })
 }

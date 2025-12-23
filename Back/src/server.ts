@@ -12,7 +12,9 @@ dotenv.config()
 const app = fastify()
 
 app.register(cors, {
-	origin: '*'
+	origin: '*',
+	methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+	allowedHeaders: ['Content-Type', 'Authorization']
 })
 
 app.register(jwt, { secret: process.env.JWT_SECRET || 'JWT_SECRET' })

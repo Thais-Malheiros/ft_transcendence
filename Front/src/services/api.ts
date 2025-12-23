@@ -49,6 +49,6 @@ export const api = {
 	get: <T>(endpoint: string) => fetchWrapper<T>(endpoint, { method: "GET" }),
 	post: <T>(endpoint: string, body: any) => fetchWrapper<T>(endpoint, { method: "POST", body }),
 	put: <T>(endpoint: string, body: any) => fetchWrapper<T>(endpoint, { method: "PUT", body }),
-	delete: <T>(endpoint: string) => fetchWrapper<T>(endpoint, { method: "DELETE" }),
+	delete: <T>(endpoint: string, body: any) => fetchWrapper<T>(endpoint, { method: "DELETE", body }),
 	request: fetchWrapper
 };

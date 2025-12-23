@@ -10,6 +10,7 @@ interface ButtonProps {
 	theme?: "potatoes" | "tomatoes" | "default";
 	icon?: "check" | "x" | "trash" | "arrowLeft" | "heart" | "users";
 	className?: string;
+	attributes?: string;
 	onClick?: string;
 }
 
@@ -45,7 +46,8 @@ export function Button({
 	variant = "primary",
 	theme = "default",
 	icon = undefined,
-	className
+	className,
+	attributes
 }: ButtonProps) {
 
 	let variantTheme;
@@ -63,6 +65,7 @@ export function Button({
 			${id ? `id="${id}"` : ""}
 			${title ? `title="${title}"` : ""}
 			class="${cn(baseStyles, variantTheme[variant], className)} flex items-center justify-center gap-2"
+			${attributes}
 		>
 			${Icon({
 				name: icon,
