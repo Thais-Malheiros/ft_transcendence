@@ -59,7 +59,7 @@ export function getLogin2FAHtml() {
                     <div class="mb-8">
                         ${Input({
                             id: "input-login-2fa-code",
-                            placeholder: "000 000",
+                            placeholder: "2FA CODE",
                             className: `
                                 text-center text-3xl tracking-[0.5em] font-mono
                                 bg-slate-800/80 border border-white/10

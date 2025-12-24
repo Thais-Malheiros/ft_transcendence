@@ -99,7 +99,6 @@ async function renderView(route: Route) {
 			break;
 
 		case '2fa':
-			document.getElementById('btn-settings-2fa-enable')?.addEventListener('click', async () => {
 				try {
 					const response = await authService.setup2FA();
 					console.log(response)
@@ -119,7 +118,6 @@ async function renderView(route: Route) {
 					});
 					return ;
 				}
-			});
 			break;
 
 		case '2fa-disable':
@@ -412,82 +410,138 @@ function showCopyToast() {
     }, 2000);
 }
 
+function formatBackupCodesHtml(codes: string[]): string {
+    if (!codes || codes.length === 0) return "Nenhum código gerado.";
+
+    // Gera os itens da grade (número + código)
+    const gridItemsHtml = codes.map((code, index) => `
+        <div class="flex items-center space-x-2 p-1">
+            <span class="text-gray-500 font-mono select-none text-xs">${index + 1}.</span>
+            <span class="font-mono text-white tracking-wider text-sm">${code}</span>
+        </div>
+    `).join('');
+
+    const rawCodesString = codes.join('\n');
+
+    return `
+        <p class="mb-4 text-sm text-gray-300 text-center">
+            Guarde estes códigos em um local seguro. Você precisará deles para acessar sua conta se perder seu dispositivo 2FA.
+        </p>
+        
+        <div 
+            id="backup-codes-container"
+            data-codes="${encodeURIComponent(rawCodesString)}"
+            class="bg-slate-950/60 p-4 rounded-lg border border-white/10 mb-5 text-left shadow-inner overflow-hidden relative group"
+        >
+            <div class="grid grid-cols-2 gap-x-4 gap-y-2 relative z-10">
+                ${gridItemsHtml}
+            </div>
+            <div class="absolute inset-0 bg-cyan-500/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
+        </div>
+
+        <div class="flex justify-center mb-6">
+            <button
+                id="btn-copy-backup-codes"
+                class="flex items-center justify-center gap-2 bg-slate-800 hover:bg-slate-700 text-gray-300 hover:text-white text-xs font-bold px-4 py-2 rounded border border-white/10 transition-all duration-200 active:scale-[0.98]"
+            >
+                <span class="text-sm">📋</span> <span id="btn-copy-backup-text">Copiar Todos</span>
+            </button>
+        </div>
+    `;
+}
+
 function setup2FAEvents() {
-	document.getElementById('btn-2fa-copy')?.addEventListener('click', () => {
-	    const secretInput = document.getElementById('input-2fa-secret') as HTMLInputElement;
-	    const secret = secretInput.value;
-	
-	    navigator.clipboard.writeText(secret).then(() => {
-	        showCopyToast();
-		
-	        const btn = document.getElementById('btn-2fa-copy');
-	        if (btn) {
-	            const originalText = btn.innerHTML;
-	            btn.innerHTML = "✅";
-	            setTimeout(() => btn.innerHTML = originalText, 2000);
-	        }
-	    }).catch(err => {
-	        console.error('Falha ao copiar:', err);
-	    });
-	});
+    document.getElementById('btn-2fa-copy')?.addEventListener('click', () => {
+        const secretInput = document.getElementById('input-2fa-secret') as HTMLInputElement;
+        const secret = secretInput.value;
+    
+        navigator.clipboard.writeText(secret).then(() => {
+        
+            const btn = document.getElementById('btn-2fa-copy');
+            if (btn) {
+                const originalText = btn.innerHTML;
+                btn.innerHTML = "✅";
+                setTimeout(() => btn.innerHTML = originalText, 2000);
+            }
+        }).catch(err => {
+            console.error('Falha ao copiar:', err);
+        });
+    });
 
-	document.getElementById('btn-2fa-send')?.addEventListener('click', async () => {
-		const tokenInput = document.getElementById('input-2fa-code') as HTMLInputElement;
-		const tokenValue = tokenInput.value.replace(/\s/g, '');
-		const secretCode = (document.getElementById('input-2fa-secret')as HTMLInputElement).value;
-		console.log("Secret: " + secretCode)
+    document.getElementById('btn-2fa-back')?.addEventListener('click', () => {
+        navigateTo('settings');
+    });
 
-		if (tokenValue.length !== 6) {
-			showModal({
-				title: "Código inválido",
-				message: "O código deve conter exatamente 6 dígitos.",
-				type: "danger",
-				confirmText: "Corrigir"
-			});
-			return;
-		}
+    document.getElementById('btn-2fa-send')?.addEventListener('click', async () => {
+        const tokenInput = document.getElementById('input-2fa-code') as HTMLInputElement;
+        const tokenValue = tokenInput.value.replace(/\s/g, '');
+        const secretCode = (document.getElementById('input-2fa-secret') as HTMLInputElement).value;
 
-		try {
+        if (tokenValue.length !== 6) {
+            showModal({
+                title: "Código inválido",
+                message: "O código deve conter exatamente 6 dígitos.",
+                type: "danger",
+                confirmText: "Corrigir"
+            });
+            return;
+        }
 
-			const response = await authService.enable2FA({
-				token: tokenValue,
-				secret: secretCode,
-			});
-		
-		if (response.message === '2FA habilitado com sucesso') {
+        try {
+            const response = await authService.enable2FA({
+                token: tokenValue,
+                secret: secretCode,
+            });
+        
+            if (response.message === '2FA habilitado com sucesso') {
+                if (state.user) {
+                    state.user.has2FA = true;
+                }
 
-			if (state.user) {
-				state.user.has2FA = true;
-			}
-			// Precisa salvar os codigos de Backup?
-			showModal({
-				title: "2FA habilitado com sucesso",
-				message: Array.isArray(response.backupCodes) ? response.backupCodes.join('\n') : response.backupCodes,
-				type: "success",
-				confirmText: "OK",
-			});
+                const backupCodesHtml = formatBackupCodesHtml(response.backupCodes);
 
-			navigateTo("settings")
-			
-		}
+                showModal({
+                    title: "2FA Habilitado!",
+                    message: backupCodesHtml,
+                    type: "success",
+                    confirmText: "OK, já salvei",
+                    onConfirm: () => {
+                         navigateTo("settings");
+                    }
+                });
 
+                const copyBtn = document.getElementById('btn-copy-backup-codes');
+                const container = document.getElementById('backup-codes-container');
+                const copyTextSpan = document.getElementById('btn-copy-backup-text');
 
+                if (copyBtn && container && copyTextSpan) {
+                    copyBtn.addEventListener('click', () => {
+                        const rawCodes = decodeURIComponent(container.getAttribute('data-codes') || '');
+                        
+                        navigator.clipboard.writeText(rawCodes).then(() => {
+                            const originalText = copyTextSpan.innerText;
+                            copyTextSpan.innerText = "Códigos Copiados! ✅";
+                            copyBtn.classList.add('bg-emerald-900/50', '!text-emerald-200', '!border-emerald-500/50');
+                            
+                            setTimeout(() => {
+                                copyTextSpan.innerText = originalText;
+                                copyBtn.classList.remove('bg-emerald-900/50', '!text-emerald-200', '!border-emerald-500/50');
+                            }, 2500);
+                        }).catch(err => console.error('Erro ao copiar códigos de backup', err));
+                    });
+                }
+            }
 
-		} catch (error : any) {
-			showModal({
-				title: "Falha ao ativar 2FA",
-				message: error.message || "Não foi possível validar o código",
-				type: "danger",
-				confirmText: "Tentar novamente",
-			});
-			return ;
-			
-		}
-	});
-
-	document.getElementById('btn-2fa-back')?.addEventListener('click', () => {
-		navigateTo('settings');
-	});
+        } catch (error : any) {
+            showModal({
+                title: "Falha ao ativar 2FA",
+                message: error.message || "Não foi possível validar o código",
+                type: "danger",
+                confirmText: "Tentar novamente",
+            });
+            return;
+        }
+    });
 }
 
 function setup2FADisableEvents() {
@@ -868,12 +922,12 @@ function setupLogin2FAEvents() {
 
     document.getElementById('btn-login-2fa-confirm')?.addEventListener('click', async () => {
         const tokenInput = document.getElementById('input-login-2fa-code') as HTMLInputElement;
-        const code = tokenInput.value.replace(/\s/g, '');
+        const code = tokenInput.value.replace(/\s/g, '').replace('-', '');
 
-        if (code.length !== 6) {
+        if (code.length !== 6 && code.length !== 8) {
             showModal({
                 title: "Código inválido",
-                message: "O código deve ter 6 dígitos.",
+                message: "O código deve ter 6 ou 8 dígitos.",
                 type: "danger"
             });
             return;

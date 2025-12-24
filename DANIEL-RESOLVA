@@ -1,0 +1,10 @@
+1:
+    No fluxo de usar um código de backup para entrar na conta com 2FA ativado.
+    O app não aceita o código de backup.
+    Ele aceita os 8digitos, mas dá algum erro na validação do zod
+
+2:
+    Algumas vezes, quando damos f5 na tela de 2fa(e outros)
+    O app fica com o fundo azul. blockeando o acesso a página.
+    Acredito que seja erro de endereçamento da url. Não tenho certeza
+
