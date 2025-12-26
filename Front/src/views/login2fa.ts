@@ -1,13 +1,20 @@
-import { Button } from "@/components/Button";
-import { Card } from "@/components/Card";
-import { Input } from "@/components/Input";
-import { state } from "@/main";
+import { Button } from "../components/Button";
+import { Card } from "../components/Card";
+import { Input } from "../components/Input";
+import { authService } from "../services/authRoutes";
+import { showModal } from "../utils/modalManager";
+import { state, saveState, type Route } from "../store/appState";
+
+//imgs
+import bgPotatoes from '../assets/bg-login-potatoes.png';
+import bgTomatoes from '../assets/bg-login-tomatoes.png';
 
 const backgroundByGang = {
-    potatoes: 'src/assets/bg-login-potatoes.png',
-    tomatoes: 'src/assets/bg-login-tomatoes.png',
+    potatoes: bgPotatoes,
+    tomatoes: bgTomatoes,
 };
 
+// --- HTML ---
 export function getLogin2FAHtml() {
     // Tenta pegar a gangue do state (definido parcialmente no primeiro passo do login)
     // Se não tiver, usa potatoes como fallback
@@ -89,4 +96,65 @@ export function getLogin2FAHtml() {
             })}
         </div>
     `;
+}
+
+// --- LÓGICA ---
+export function setupLogin2FAEvents(navigate: (route: Route) => void) {
+    
+    // Botão Voltar/Cancelar
+    document.getElementById('btn-login-2fa-cancel')?.addEventListener('click', () => {
+        localStorage.removeItem('tempToken');
+        state.user = null; // Limpa o user temporário
+        navigate('login');
+    });
+
+    // Botão Confirmar
+    document.getElementById('btn-login-2fa-confirm')?.addEventListener('click', async () => {
+        const tokenInput = document.getElementById('input-login-2fa-code') as HTMLInputElement;
+        const code = tokenInput.value;
+
+        const tempToken = localStorage.getItem('tempToken');
+        
+        // Se perdeu o token temporário (F5 na página), volta pro login
+        if (!tempToken) {
+            navigate('login');
+            return;
+        }
+
+        try {
+            const response = await authService.login2FA({
+                token: code,
+            });
+
+            // Sucesso: Persiste token real e limpa temporário
+            localStorage.setItem('token', response.token);
+            localStorage.removeItem('tempToken');
+
+            state.isAuthenticated = true;
+            state.user = {
+                id: response.user.id,
+                name: response.user.name,
+                nick: response.user.nick,
+                gang: response.user.gang,
+                isAnonymous: response.user.isAnonymous,
+                isOnline: true,
+                score: 0,
+                rank: 0,
+                has2FA: true
+            };
+
+            saveState(); // Salva no localStorage
+            navigate('dashboard');
+
+        } catch (error: any) {
+            showModal({
+                title: "Acesso Negado",
+                message: error.message || "Código incorreto ou expirado.",
+                type: "danger",
+                confirmText: "Tentar novamente"
+            });
+            tokenInput.value = "";
+            tokenInput.focus();
+        }
+    });
 }

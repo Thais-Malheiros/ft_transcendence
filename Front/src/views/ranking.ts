@@ -1,32 +1,27 @@
-import { Button } from "@/components/Button";
-import { state } from "@/main";
-import { leaderboardService } from "@/services/leaderboardRoutes";
-import { friendsService } from "@/services/friendsRoutes";
+// src/views/ranking.ts
+import { Button } from "../components/Button";
+import { state, type Route } from "../store/appState";
+import { leaderboardService } from "../services/leaderboardRoutes";
+import { friendsService } from "../services/friendsRoutes";
+import { showModal } from "../utils/modalManager";
 
+//imgs
+import bgPotatoes from '../assets/bg-login-potatoes.png';
+import bgTomatoes from '../assets/bg-login-tomatoes.png';
+import bgDefault from '../assets/bg-login.png';
+
+// --- HELPERS ---
 const backgroundByGang = {
-	potatoes: 'src/assets/bg-login-potatoes.png',
-	tomatoes: 'src/assets/bg-login-tomatoes.png',
+    potatoes: bgPotatoes,
+    tomatoes: bgTomatoes,
 };
 
-// --- Helpers de Renderização ---
 function formatName(name: string): string {
-	if (name.length <= 15) return name;
-	return name.substring(0, 15) + '...';
+    if (name.length <= 15) return name;
+    return name.substring(0, 15) + '...';
 }
 
-
-export interface User {
-    id: number;
-    name: string;
-    nick: string;
-    avatar?: string;
-    isAnonymous: boolean;
-    score: number;
-    rank: number;
-    isOnline: boolean;
-    gang: 'potatoes' | 'tomatoes';
-}
-
+// Tipos locais ou importados
 export interface LeaderboardUser {
     id: number;
     name: string;
@@ -55,12 +50,11 @@ function renderRankItem(player: LeaderboardUser, index: number, currentUserId: n
     if (index === 1) rankDisplay = `<span class="text-2xl">🥈</span>`;
     if (index === 2) rankDisplay = `<span class="text-2xl">🥉</span>`;
 
-    // Lógica do Botão de Ação
+    // Botões de Ação
     let actionButton = '';
     
     if (!isMe) {
         if (isFriend) {
-            // Botão de Remover Amigo
             actionButton = `
                 <button
                     class="btn-rank-remove flex items-center gap-1 bg-red-900/80 hover:bg-red-700 text-white text-xs font-bold px-3 py-1.5 rounded-md transition-colors shadow-[0_0_10px_rgba(239,68,68,0.2)] cursor-pointer"
@@ -72,7 +66,6 @@ function renderRankItem(player: LeaderboardUser, index: number, currentUserId: n
                 </button>
             `;
         } else {
-            // Botão de Adicionar Amigo
             actionButton = `
                 <button
                     class="btn-rank-add flex items-center gap-1 bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold px-3 py-1.5 rounded-md transition-colors shadow-[0_0_10px_rgba(8,145,178,0.5)] cursor-pointer"
@@ -84,9 +77,11 @@ function renderRankItem(player: LeaderboardUser, index: number, currentUserId: n
             `;
         }
     } else {
-        // Indicador de "Você"
         actionButton = `<span class="text-xs text-gray-500 font-bold px-2">VOCÊ</span>`;
     }
+
+    // Avatar
+    const avatar = player.avatar || '/assets/perfil-sla.png';
 
     return `
         <div tabindex="0" class="group relative flex items-center justify-between p-3 bg-slate-900/40 border border-white/5 rounded-lg mb-2 transition-all duration-300 cursor-pointer ${borderColor} ${glowColor} outline-none">
@@ -97,7 +92,7 @@ function renderRankItem(player: LeaderboardUser, index: number, currentUserId: n
 
                 <div class="relative shrink-0">
                     <div class="w-10 h-10 rounded-full bg-slate-800 border border-white/10 overflow-hidden">
-                        <img src="${player.avatar || 'src/assets/perfil-inexistente.png'}" alt="${player.nick}" class="w-full h-full object-cover" onerror="this.src='https://ui-avatars.com/api/?name=${player.nick}&background=random'"/>
+                        <img src="${avatar}" alt="${player.nick}" class="w-full h-full object-cover" onerror="this.src='https://ui-avatars.com/api/?name=${player.nick}&background=random'"/>
                     </div>
                     <div class="absolute bottom-0 right-0 w-2.5 h-2.5 ${statusColor} rounded-full border border-slate-900"></div>
                 </div>
@@ -117,11 +112,12 @@ function renderRankItem(player: LeaderboardUser, index: number, currentUserId: n
     `;
 }
 
+// --- HTML (Async) ---
 export async function getRankingHtml() {
     const user = state.user;
     if (!user) return `<div class="p-10 text-white">Erro: Usuário não logado</div>`;
 
-    // 1. Fetch de Dados em Paralelo (Leaderboard + Meus Amigos)
+    // 1. Fetch de Dados
     let players: LeaderboardUser[] = [];
     let myFriendsIds: number[] = [];
 
@@ -131,18 +127,18 @@ export async function getRankingHtml() {
             friendsService.listFriends()
         ]);
         
-        players = leaderboardData.map((user: any) => ({
-            ...user,
-            isAnonymous: user.isAnonymous ?? false
+        players = leaderboardData.map((u: any) => ({
+            ...u,
+            isAnonymous: u.isAnonymous ?? false
         }));
         myFriendsIds = friendsData.map((f: any) => f.id);
 
     } catch (error) {
         console.error("Erro ao carregar ranking", error);
-        // Fallback ou tratamento de erro visual aqui se desejar
+        return `<div class="p-10 text-red-500 text-center">Falha ao carregar ranking. Tente novamente mais tarde.</div>`;
     }
 
-    // 2. Processamento dos Dados
+    // 2. Processamento
     const potatoPlayers = players.filter(p => p.gang === 'potatoes');
     const tomatoPlayers = players.filter(p => p.gang === 'tomatoes');
 
@@ -151,24 +147,22 @@ export async function getRankingHtml() {
     const totalGlobalScore = totalPotatoScore + totalTomatoScore;
     const potatoPercentage = totalGlobalScore > 0 ? Math.round((totalPotatoScore / totalGlobalScore) * 100) : 50;
 
-    // Dados do Usuário Logado para o Header
+    // Dados do Usuário
     const nick = user.nick;
     const gang = user.gang;
-    
-    // Tenta encontrar dados atualizados do user no ranking, senão usa do state
     const currentUserInRanking = players.find(p => p.id === user.id);
     const score = currentUserInRanking ? currentUserInRanking.score : (user.score || 0);
     const rank = currentUserInRanking ? currentUserInRanking.rank : "-";
 
-    // Estilos Dinâmicos
+    // Estilos
     const isPotato = gang === 'potatoes';
     const userThemeColor = isPotato ? 'text-yellow-400' : 'text-red-400';
     const userBorderColor = isPotato ? 'border-yellow-500' : 'border-red-500';
     const userShadowColor = isPotato ? 'shadow-[0_0_10px_#eab308]' : 'shadow-[0_0_10px_#ef4444]';
     const headerColor = isPotato ? 'text-yellow-400' : 'text-red-400';
     const titleDropShadow = isPotato ? 'drop-shadow-[0_0_10px_rgba(234,179,8,0.5)]' : 'drop-shadow-[0_0_10px_rgba(239,68,68,0.5)]';
-    const backgroundImage = backgroundByGang[gang];
-    const avatarSrc = "src/assets/perfil-sla.png"; // Ajustar conforme sua lógica de avatar
+    const backgroundImage = backgroundByGang[gang] || bgDefault;
+    const avatarSrc = "/assets/perfil-sla.png"; 
 
     return `
         <style>
@@ -258,4 +252,84 @@ export async function getRankingHtml() {
             </div>
         </div>
     `;
+}
+
+// --- LÓGICA (Controller) ---
+export function setupRankingEvents(navigate: (route: Route) => void) {
+
+    // Voltar
+    document.getElementById('btn-ranking-back')?.addEventListener('click', () => {
+        navigate('dashboard');
+    });
+
+    // Eventos de lista (Delegation)
+    const container = document.getElementById('ranking-lists-container');
+    if (!container) return;
+
+    container.addEventListener('click', async (e) => {
+        const target = e.target as HTMLElement;
+
+        // --- ADICIONAR AMIGO ---
+        const addBtn = target.closest('.btn-rank-add') as HTMLElement;
+        if (addBtn) {
+            const nick = addBtn.getAttribute('data-nick');
+            if (nick) {
+                try {
+                    await friendsService.sendFriendRequest({ nick });
+                    showModal({
+                        title: "Sucesso",
+                        message: `Solicitação enviada para ${nick}!`,
+                        type: "success"
+                    });
+                    
+                    // Feedback visual no botão
+                    addBtn.innerHTML = "<span>Enviado</span>";
+                    addBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                } catch (error: any) {
+                    showModal({
+                        title: "Erro",
+                        message: error.message || "Falha ao enviar solicitação",
+                        type: "danger"
+                    });
+                }
+            }
+        }
+
+        // --- REMOVER AMIGO ---
+        const removeBtn = target.closest('.btn-rank-remove') as HTMLElement;
+        if (removeBtn) {
+            const id = removeBtn.getAttribute('data-id');
+            const nick = removeBtn.getAttribute('data-nick');
+
+            if (id && nick) {
+                showModal({
+                    title: "Remover Amigo",
+                    message: `Tem certeza que deseja remover ${nick} dos amigos?`,
+                    type: "danger",
+                    confirmText: "Remover",
+                    cancelText: "Cancelar",
+                    onConfirm: async () => {
+                        try {
+                            await friendsService.removeFriend(Number(id));
+                            showModal({
+                                title: "Removido",
+                                message: "Amizade desfeita.",
+                                type: "success",
+                                onConfirm: () => {
+                                    // Recarrega a tela de ranking para atualizar a lista
+                                    navigate('leaderboard'); 
+                                }
+                            });
+                        } catch (error: any) {
+                            showModal({
+                                title: "Erro",
+                                message: error.message,
+                                type: "danger"
+                            });
+                        }
+                    }
+                });
+            }
+        }
+    });
 }
