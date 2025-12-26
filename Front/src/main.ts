@@ -5,6 +5,8 @@ import { getFriendsHtml } from './views/friends';
 import { getRankingHtml } from './views/ranking';
 import { get2FAHtml } from './views/twofa';
 import { getLogin2FAHtml } from './views/login2fa';
+import { getGameHtml, GameController } from './views/game'; 
+import { io, Socket } from 'socket.io-client';
 
 import { authService } from './services/authRoutes';
 import { friendsService } from './services/friendsRoutes';
@@ -43,8 +45,11 @@ export const state: State = {
 
 const app = document.querySelector<HTMLDivElement>('#app')!;
 
+let activeGameController: GameController | null = null;
+let gameSocket: Socket | null = null;
+
 function navigateTo(route: Route, addToHistory = true) {
-	if (route === 'dashboard' || route === 'profile' || route == 'game') {
+	if (route === 'dashboard' || route === 'profile') {
 		if (!state.isAuthenticated) {
 			navigateTo('login');
 			return ;
@@ -69,6 +74,18 @@ function navigateTo(route: Route, addToHistory = true) {
 }
 
 async function renderView(route: Route) {
+	// --- BLOCO DE LIMPEZA (CRUCIAL) ---
+    // Destrói o jogo anterior se existir
+    if (activeGameController) {
+        activeGameController.destroy();
+        activeGameController = null;
+    }
+    // Garante que o socket seja desconectado mesmo se o Controller falhou
+    if (gameSocket && gameSocket.connected) {
+        gameSocket.disconnect();
+        gameSocket = null;
+    }
+    // ----------------------------------
 	switch (route) {
 		case 'login':
 			if (state.isAuthenticated) {
@@ -130,10 +147,10 @@ async function renderView(route: Route) {
 			setupDashboardEvents();
 			break;
 
-// 		case 'game':
-// 			app.innerHTML = getGameHtml();
-// 			setupGameEvents();
-// 			break;
+		case 'game':
+             app.innerHTML = getGameHtml();
+             setupGameEvents();
+             break;
 
 		case 'profile':
 			if (state.user && state.user.isAnonymous) {
@@ -672,9 +689,30 @@ function setupDashboardEvents() {
 }
 
 function setupGameEvents() {
+    // 1. SEGURANÇA: Se já existir um socket, mate-o antes de criar outro.
+    if (gameSocket) {
+        console.log("Fechando conexão antiga para evitar duplicidade...");
+        gameSocket.disconnect();
+        gameSocket = null; // Limpa a referência
+    }
 
+    // 2. Cria a nova conexão limpa
+    console.log("Iniciando nova conexão de jogo...");
+    gameSocket = io('http://localhost:3333'); 
+
+    gameSocket.on('connect', () => {
+        console.log("Conectado ao servidor do jogo! ID:", gameSocket?.id);
+        
+        // Só cria o controller se ele ainda não existir
+        if (!activeGameController && gameSocket) {
+            activeGameController = new GameController(gameSocket);
+        }
+    });
+
+    gameSocket.on('connect_error', (err) => {
+        console.error("Erro de conexão:", err);
+    });
 }
-
 function setupProfileEvents() {
 	document.getElementById('btn-profile-back')?.addEventListener('click', () => {
 		navigateTo('dashboard');
@@ -829,17 +867,6 @@ function setupSettingsEvents() {
 	});
 }
 
-function initializeRoute() {
-	let hashRoute = window.location.hash.replace('#', '') as Route;
-	let initialRoute = (hashRoute || 'login') as Route;
-
-	if (!state.isAuthenticated) {
-		initialRoute = 'login';
-	}
-
-	navigateTo(initialRoute, false);
-}
-
 function setupRankingEvents(navigateTo: Function) { // Passando navigateTo se necessário, ou importe
     
     document.getElementById('btn-ranking-back')?.addEventListener('click', () => {
@@ -923,16 +950,17 @@ function setupLogin2FAEvents() {
 
     document.getElementById('btn-login-2fa-confirm')?.addEventListener('click', async () => {
         const tokenInput = document.getElementById('input-login-2fa-code') as HTMLInputElement;
-        const code = tokenInput.value.replace(/\s/g, '').replace('-', '');
+        // const code = tokenInput.value.replace(/\s/g, '').replace('-', '');
+        const code = tokenInput.value;
 
-        if (code.length !== 6 && code.length !== 8) {
-            showModal({
-                title: "Código inválido",
-                message: "O código deve ter 6 ou 8 dígitos.",
-                type: "danger"
-            });
-            return;
-        }
+        // if (code.length !== 6 && code.length !== 8) {
+        //     showModal({
+        //         title: "Código inválido",
+        //         message: "O código deve ter 6 ou 8 dígitos.",
+        //         type: "danger"
+        //     });
+        //     return;
+        // }
 
         const tempToken = localStorage.getItem('tempToken');
         if (!tempToken) {
@@ -975,6 +1003,17 @@ function setupLogin2FAEvents() {
             tokenInput.focus();
         }
     });
+}
+
+function initializeRoute() {
+	let hashRoute = window.location.hash.replace('#', '') as Route;
+	let initialRoute = (hashRoute || 'login') as Route;
+
+	if (!state.isAuthenticated) {
+		initialRoute = 'login';
+	}
+
+	navigateTo(initialRoute, false);
 }
 
 initializeRoute()
