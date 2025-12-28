@@ -18,6 +18,8 @@ import * as RegisterView from './views/register';
 import * as SettingsView from './views/settings';
 import * as TwoFAView from './views/twofa';
 import * as TwoFADisableView from './views/twofaDisable';
+import * as SoloIA from './views/soloIA';
+import * as Multiplayer from './views/multiplayer';
 
 const app = document.querySelector<HTMLDivElement>('#app')!;
 let localGameController: GameController | null = null;
@@ -25,7 +27,7 @@ let localGameController: GameController | null = null;
 // --- NAVEGAÇÃO CENTRAL ---
 function navigateTo(route: Route, addToHistory = true) {
     // Guards de Autenticação
-    const protectedRoutes: Route[] = ['dashboard', 'profile', 'game', 'game-solo', 'friends', 'leaderboard', 'settings', '2fa', '2fa-disable'];
+    const protectedRoutes: Route[] = ['dashboard', 'profile', 'game', 'game-solo', 'friends', 'leaderboard', 'settings', '2fa', '2fa-disable', 'soloIA'];
     const publicRoutes: Route[] = ['login', 'register', 'login2fa'];
 
 	if (protectedRoutes.includes(route) && !state.isAuthenticated) {
@@ -91,12 +93,24 @@ async function renderView(route: Route) {
             app.innerHTML = DashboardView.getDashboardHtml();
             DashboardView.setupDashboardEvents(navigateTo);
             break;
-            
+        
+		case 'multiplayer':
+			if (checkAnonymousAccess()) return;
+			app.innerHTML = await Multiplayer.getMultiplayerHtml();
+			Multiplayer.setupMultiplayerEvents(navigateTo);
+			break;
+
         case 'game':
             app.innerHTML = GameView.getGameHtml();
             initGameSocket();
              break;
-            
+        
+		case 'soloIA':
+			if (checkAnonymousAccess()) return;
+			app.innerHTML = SoloIA.getSoloIAHtml();
+			SoloIA.setupSoloIAEvents(navigateTo);
+			break;
+
         case 'game-solo':
             app.innerHTML = GameView.getGameHtml();
             localGameController = new GameController({ difficulty: 2 });

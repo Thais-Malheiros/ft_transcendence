@@ -54,8 +54,8 @@ export function getDashboardHtml() {
 
 				${DashboardItem({
 					id: "btn-dashboard-solo",
-					title: "Solo / IA",
-					subtitle: "Treinar Habilidades",
+					title: "Modo Solo",
+					subtitle: "Treinar Habilidades - Enfrentar C.A.D.E.T.E",
 					icon: "🤖",
 					colorTheme: "indigo"
 				})}
@@ -130,11 +130,11 @@ export function setupDashboardEvents(navigate: (route: Route) => void) {
 
 	//NAVEGAÇÃO DOS ITENS DO DASHBOARD
 	document.getElementById('btn-dashboard-multiplayer')?.addEventListener('click', () => {
-		navigate('dashboard');
+		navigate('multiplayer');
 	});
 
 	document.getElementById('btn-dashboard-solo')?.addEventListener('click', () => {
-		navigate('dashboard');
+		navigate('soloIA');
 	});
 
 	document.getElementById('btn-dashboard-profile')?.addEventListener('click', () => {
