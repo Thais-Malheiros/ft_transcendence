@@ -207,7 +207,7 @@ function renderCasualColumn(friends: Player[]): string {
                     🎮 CASUAL
                 </h3>
                 <p class="text-sm text-gray-400 mt-1">
-                    Jogue sem ranking, sem pressão e sem rage quit 😉
+                    Jogue sem ranking e sem pressão
                 </p>
             </div>
 
