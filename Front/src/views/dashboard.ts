@@ -55,7 +55,7 @@ export function getDashboardHtml() {
 				${DashboardItem({
 					id: "btn-dashboard-solo",
 					title: "Modo Solo",
-					subtitle: "Treinar Habilidades Jogando Contra O C.A.D.E.T.E",
+					subtitle: "Treinar Habilidades - Enfrentar C.A.D.E.T.E",
 					icon: "🤖",
 					colorTheme: "indigo"
 				})}
