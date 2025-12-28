@@ -95,7 +95,8 @@ async function renderView(route: Route) {
             break;
         
 		case 'multiplayer':
-			app.innerHTML = Multiplayer.getMultiplayerHtml();
+			if (checkAnonymousAccess()) return;
+			app.innerHTML = await Multiplayer.getMultiplayerHtml();
 			Multiplayer.setupMultiplayerEvents(navigateTo);
 			break;
 
@@ -105,6 +106,7 @@ async function renderView(route: Route) {
              break;
         
 		case 'soloIA':
+			if (checkAnonymousAccess()) return;
 			app.innerHTML = SoloIA.getSoloIAHtml();
 			SoloIA.setupSoloIAEvents(navigateTo);
 			break;
