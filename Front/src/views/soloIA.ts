@@ -1,10 +1,10 @@
-    import { state, type Route } from "../store/appState";
     import { Button } from "../components/Button";
+import { state, type Route } from "../store/appState";
 
     // imgs
     import bgPotatoes from '../assets/bg-login-potatoes.png';
-    import bgTomatoes from '../assets/bg-login-tomatoes.png';
-    import bgDefault from '../assets/bg-login.png';
+import bgTomatoes from '../assets/bg-login-tomatoes.png';
+import bgDefault from '../assets/bg-login.png';
 
     // --- GERAÇÃO DO HTML (Async) ---
     export function getSoloIAHtml() {
@@ -35,7 +35,7 @@
                 <div class="w-full flex flex-col sm:flex-row justify-between items-start sm:items-end
                             gap-4 mb-6 md:mb-8 border-b border-white/10 pb-4">
                     <h2 class="${headerColor} text-4xl md:text-5xl font-bold tracking-widest ${titleDropShadow}">
-                        SELECIONE A DIFICULDADE
+                        MODO SOLO
                     </h2>
 
                     <div class="self-end sm:self-auto">
@@ -47,6 +47,20 @@
                         })}
                     </div>
                 </div>
+                
+                    <!-- Subtítulo -->
+                    <div class="mb-8 md:mb-10 w-full flex justify-center">
+                        <div
+                            class="w-full max-w-md bg-slate-900/60 backdrop-blur-md
+                                px-6 py-3 rounded-xl
+                                border border-white/10 shadow-lg
+                                flex justify-center">
+                            <h3 class="text-lg md:text-xl text-white font-bold flex items-center gap-2 tracking-wide">
+                                <span class="text-cyan-400">🎯</span>
+                                Selecione a dificuldade
+                            </h3>
+                        </div>
+                    </div>
 
                 <!-- Conteúdo -->
                 <div class="w-full flex flex-col items-center justify-center gap-6 mt-8 md:mt-12 max-w-md">

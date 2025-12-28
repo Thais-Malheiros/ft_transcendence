@@ -54,8 +54,8 @@ export function getDashboardHtml() {
 
 				${DashboardItem({
 					id: "btn-dashboard-solo",
-					title: "Solo / IA",
-					subtitle: "Treinar Habilidades",
+					title: "Modo Solo",
+					subtitle: "Treinar Habilidades Jogando Contra IA",
 					icon: "🤖",
 					colorTheme: "indigo"
 				})}
