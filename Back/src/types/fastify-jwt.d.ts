@@ -8,7 +8,7 @@ declare module '@fastify/jwt' {
 			email: string;
 			nick: string;
 			isAnonymous: boolean;
-			gang: 'potatoes' | 'tomatoes'
+			gang: string;
 			temp2FA?: boolean
 		}
 		user: {
@@ -16,7 +16,7 @@ declare module '@fastify/jwt' {
 			email: string;
 			nick: string;
 			isAnonymous: boolean;
-			gang: 'potatoes' | 'tomatoes'
+			gang: string;
 			temp2FA?: boolean
 		}
 	}

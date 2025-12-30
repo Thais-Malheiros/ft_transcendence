@@ -1,23 +1,8 @@
-import crypto from 'crypto'
-
 import { Player } from '@prisma/client'
-
-import { db, User } from '../database/memoryDB'
+import crypto from 'crypto'
+import { prisma } from '../database/prisma'
 
 export class AuthService {
-
-	static sanitizeUser(user: User) {
-		return {
-			id: user.id,
-			name: user.name,
-			nick: user.nick,
-			email: user.isAnonymous ? undefined : user.email,
-			isAnonymous: user.isAnonymous,
-			gang: user.gang,
-			has2FA: !!user.twoFactorEnabled,
-			avatar: user.avatar
-		}
-	}
 
 	static sanitizePlayer(user: Player) {
 		return {
@@ -26,8 +11,10 @@ export class AuthService {
 			nick: user.nick,
 			email: user.isAnonymous ? undefined : user.email,
 			isAnonymous: user.isAnonymous,
-			gang: user.gang,
-			has2FA: !!user.twoFAEnabled
+			gang: user.gang as 'potatoes' | 'tomatoes',
+			has2FA: !!user.twoFAEnabled,
+
+			avatar: user.avatar
 		}
 	}
 
@@ -40,29 +27,33 @@ export class AuthService {
 		return codes
 	}
 
-	static cleanupInactiveAnonymous() {
+	static async cleanupInactiveAnonymous() {
 		const ANONYMOUS_INACTIVITY_TIMEOUT = 5 * 60 * 1000
-		const now = Date.now()
+		const thresholdDate = new Date(Date.now() - ANONYMOUS_INACTIVITY_TIMEOUT);
 
-		const allUsers = db.getAllUsers()
-
-		const activeUsers = allUsers.filter(user => {
-			if (!user.isAnonymous) return true
-			if (!user.lastActivity) return false
-			return (now - user.lastActivity < ANONYMOUS_INACTIVITY_TIMEOUT)
-		})
-
-		if (activeUsers.length < allUsers.length) {
-			db.setUsers(activeUsers)
-			console.log(`Limpou ${allUsers.length - activeUsers.length} usuários anônimos inativos.`)
+		try {
+			const result = await prisma.player.deleteMany({
+				where: {
+					isAnonymous: true,
+					lastActivity: { lt: thresholdDate }
+				}
+			});
+			if (result.count > 0) {
+				console.log(`[CLEANUP] Limpou ${result.count} usuários anônimos inativos.`);
+			}
+		} catch (error) {
+			console.error("Erro ao limpar usuários anônimos:", error);
 		}
 	}
 
 	static async updateActivity(userId: number) {
-		const user = await db.findUserById(userId)
-
-		if (user && user.isAnonymous) {
-			user.lastActivity = Date.now()
+		try {
+			await prisma.player.updateMany({
+				where: { id: userId, isAnonymous: true },
+				data: { lastActivity: new Date() }
+			});
+		} catch (error) {
+			console.error(`Erro ao atualizar atividade:`, error);
 		}
 	}
 }

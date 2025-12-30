@@ -4,7 +4,6 @@ import { authenticator } from 'otplib'
 import QRCode from 'qrcode'
 
 import { PlayerController } from '../database/controllers/player.controller'
-import { User } from '../database/memoryDB'
 import {
 	AnonymousInput, anonymousSchema,
 	DeleteAccountInput,
@@ -26,7 +25,6 @@ import {
 	login2FARouteSchema,
 	loginRouteSchema,
 	logoutRouteSchema,
-	meRouteSchema,
 	registerRouteSchema
 } from '../schemas/swagger/route.schemas'
 import { AuthService } from '../services/authServices'
@@ -80,26 +78,14 @@ export async function authRoutes(app: FastifyInstance) {
 	}, async (req, reply) => {
 		const { identifier, password } = req.body as LoginInput
 
-		const player = await PlayerController.findByIdentifier(identifier)
-		if (!player || !player.password) return reply.code(404).send({ error: 'Credenciais inválidas' })
-		const user = {
-			id: player.id!,
-			name: player.name!,
-			nick: player.nick!,
-			email: player.email!,
-			isAnonymous: player.isAnonymous!,
-			gang: player.gang!,
-			password: player.password!,
-			twoFactorEnabled: player.twoFAEnabled,
-			twoFactorSecret: player.twoFASecret,
-			avatar: player.avatar,
-		} as User
+		const user = await PlayerController.findByIdentifier(identifier)
+		if (!user || !user.password) return reply.code(404).send({ error: 'Credenciais inválidas' })
 
 		const isValid = await bcrypt.compare(password, user.password!)
 		if (!isValid) return reply.code(401).send({ error: 'Credenciais inválidas' })
 
 		// Fluxo 2FA
-		if (user.twoFactorEnabled) {
+		if (user.twoFAEnabled) {
 			const tempToken = app.jwt.sign({
 				id: user.id, email: user.email, nick: user.nick,
 				isAnonymous: user.isAnonymous, gang: user.gang, temp2FA: true
@@ -117,7 +103,10 @@ export async function authRoutes(app: FastifyInstance) {
 			isAnonymous: user.isAnonymous, gang: user.gang
 		})
 
-		return reply.code(200).send({ token, user: AuthService.sanitizeUser(user) })
+		return reply.code(200).send({
+			token,
+			user: AuthService.sanitizePlayer(user)
+		})
 	})
 
 	// --- LOGIN 2FA ---
@@ -128,22 +117,12 @@ export async function authRoutes(app: FastifyInstance) {
 	}, async (req: FastifyRequest, reply) => {
 		const { token } = req.body as Login2FAInput
 
-		const player = await PlayerController.findById(req.user.id)
-		if (!player) return reply.code(401).send({ error: 'Usuário não encontrado' })
-		const user = {
-			id: player.id!,
-			name: player.name!,
-			nick: player.nick!,
-			email: player.email!,
-			isAnonymous: player.isAnonymous!,
-			gang: player.gang!,
-			twoFactorEnabled: player.twoFAEnabled,
-			twoFactorSecret: player.twoFASecret
-		} as User
+		const user = await PlayerController.findById(req.user.id)
+		if (!user) return reply.code(401).send({ error: 'Usuário não encontrado' })
 
-		if (!user.twoFactorEnabled || !user.twoFactorSecret) return reply.code(400).send({ error: '2FA não habilitado' })
+		if (!user.twoFAEnabled || !user.twoFASecret) return reply.code(400).send({ error: '2FA não habilitado' })
 
-		let isValid = authenticator.check(token, user.twoFactorSecret)
+		let isValid = authenticator.check(token, user.twoFASecret)
 
 		if (!isValid) {
 			const backupCode = await PlayerController.getBackupCodes(user.id)
@@ -160,7 +139,7 @@ export async function authRoutes(app: FastifyInstance) {
 			isAnonymous: user.isAnonymous, gang: user.gang
 		})
 
-		return { token: finalToken, user: AuthService.sanitizeUser(user) }
+		return { token: finalToken, user: AuthService.sanitizePlayer(user) }
 	})
 
 	// --- ANONYMOUS ---
@@ -174,7 +153,7 @@ export async function authRoutes(app: FastifyInstance) {
 		const existing = await PlayerController.findByNick(generatedNick)
 		if (existing) return reply.code(400).send({ error: 'Nick já em uso' })
 
-		const player = await PlayerController.create({
+		const user = await PlayerController.create({
 			name: generatedNick,
 			nick: generatedNick,
 			email: `anonymous_${Date.now()}@local`,
@@ -183,44 +162,12 @@ export async function authRoutes(app: FastifyInstance) {
 			gang: Math.random() > 0.5 ? 'potatoes' : 'tomatoes',
 		})
 
-		const user = {
-			id: player.id,
-			name: player.name,
-			nick: player.nick,
-			email: player.email,
-			isAnonymous: player.isAnonymous,
-			gang: player.gang,
-			password: player.password,
-		} as User
-
 		const token = app.jwt.sign({
 			id: user.id, email: user.email, nick: user.nick,
 			isAnonymous: true, gang: user.gang,
 		}, { expiresIn: '2h' })
 
-		return { token, user: AuthService.sanitizeUser(user) }
-	})
-
-	// --- ME ---
-	app.get('/me', {
-		onRequest: [app.authenticate],
-		onResponse: [app.updateLastActivity],
-		schema: meRouteSchema
-	}, async (req: FastifyRequest, reply) => {
-		const player = await PlayerController.findById(req.user.id)
-		if (!player) return reply.code(404).send({ error: 'Usuário não encontrado' })
-		const user = {
-			id: player?.id!,
-			name: player?.name!,
-			nick: player?.nick!,
-			email: player?.email!,
-			isAnonymous: player?.isAnonymous!,
-			gang: player?.gang!,
-			password: player?.password!,
-			twoFactorEnabled: player?.twoFAEnabled,
-			twoFactorSecret: player?.twoFASecret
-		} as User
-		return { user: AuthService.sanitizeUser(user) }
+		return { token, user: AuthService.sanitizePlayer(user) }
 	})
 
 	// --- LOGOUT (DELETE ANONYMOUS) ---
@@ -244,23 +191,11 @@ export async function authRoutes(app: FastifyInstance) {
 	}, async (req: FastifyRequest, reply) => {
 		const { password, token } = req.body as DeleteAccountInput
 
-		const player = await PlayerController.findById(req.user.id)
+		const user = await PlayerController.findById(req.user.id)
 
-		if (!player) {
+		if (!user) {
 			return reply.code(400).send({ error: 'Usuário não encontrado' })
 		}
-
-		const user = {
-			id: player?.id!,
-			name: player?.name!,
-			nick: player?.nick!,
-			email: player?.email!,
-			isAnonymous: player?.isAnonymous!,
-			gang: player?.gang!,
-			password: player?.password!,
-			twoFactorEnabled: player?.twoFAEnabled,
-			twoFactorSecret: player?.twoFASecret
-		} as User
 
 		if (!user.isAnonymous) {
 			if (!password) {
@@ -272,12 +207,12 @@ export async function authRoutes(app: FastifyInstance) {
 				return reply.code(400).send({ error: 'Senha incorreta.' })
 			}
 
-			if (user.twoFactorEnabled) {
+			if (user.twoFAEnabled) {
 				if (!token) {
 					return reply.code(400).send({ error: 'Token 2FA é obrigatório.' })
 				}
 
-				let isValid = authenticator.check(token, user.twoFactorSecret!)
+				let isValid = authenticator.check(token, user.twoFASecret!)
 
 				if (!isValid) {
 					const backupCode = await PlayerController.getBackupCodes(user.id)
@@ -305,21 +240,10 @@ export async function authRoutes(app: FastifyInstance) {
 		onRequest: [app.authenticate],
 		schema: setup2FARouteSchema
 	}, async (req: FastifyRequest, reply) => {
-		const player = await PlayerController.findById(req.user.id)
-		const user = {
-			id: player?.id!,
-			name: player?.name!,
-			nick: player?.nick!,
-			email: player?.email!,
-			isAnonymous: player?.isAnonymous!,
-			gang: player?.gang!,
-			password: player?.password!,
-			twoFactorEnabled: player?.twoFAEnabled,
-			twoFactorSecret: player?.twoFASecret
-		} as User
+		const user = await PlayerController.findById(req.user.id)
 
 		if (!user) return reply.code(404).send({ error: 'Usuário não encontrado' })
-		if (user.twoFactorEnabled) return reply.code(400).send({ error: '2FA já habilitado' })
+		if (user.twoFAEnabled) return reply.code(400).send({ error: '2FA já habilitado' })
 
 		const secret = authenticator.generateSecret()
 		const otpauth = authenticator.keyuri(user.email, 'ft_transcendence', secret)
@@ -336,23 +260,11 @@ export async function authRoutes(app: FastifyInstance) {
 		preHandler: app.validateBody(enable2FASchema)
 	}, async (req: FastifyRequest, reply) => {
 		const { token, secret } = req.body as Enable2FAInput
-		const player = await PlayerController.findById(req.user.id)
-		const user = {
-			id: player?.id!,
-			name: player?.name!,
-			nick: player?.nick!,
-			email: player?.email!,
-			isAnonymous: player?.isAnonymous!,
-			gang: player?.gang!,
-			password: player?.password!,
-			twoFactorEnabled: player?.twoFAEnabled,
-			twoFactorSecret: player?.twoFASecret
-		} as User
+		const user = await PlayerController.findById(req.user.id)
 
 		if (!user) return reply.code(404).send({ error: 'Usuário não encontrado' })
-		if (user.twoFactorEnabled) return reply.code(400).send({ error: '2FA já habilitado' })
-		if (user.twoFactorSecret !== secret) return reply.code(400).send({ error: 'Segredo inválido' })
-
+		if (user.twoFAEnabled) return reply.code(400).send({ error: '2FA já habilitado' })
+		if (user.twoFASecret !== secret) return reply.code(400).send({ error: 'Segredo inválido' })
 		const isValid = authenticator.check(token, secret)
 		if (!isValid) return reply.code(400).send({ error: 'Token inválido' })
 
@@ -369,24 +281,12 @@ export async function authRoutes(app: FastifyInstance) {
 		preHandler: app.validateBody(disable2FASchema)
 	}, async (req: FastifyRequest, reply) => {
 		const { token } = req.body as Disable2FAInput
-		const player = await PlayerController.findById(req.user.id)
-		if (!player) return reply.code(404).send({ error: 'Usuário não encontrado' })
+		const user = await PlayerController.findById(req.user.id)
+		if (!user) return reply.code(404).send({ error: 'Usuário não encontrado' })
 
-		const user = {
-			id: player.id!,
-			name: player.name!,
-			nick: player.nick!,
-			email: player.email!,
-			isAnonymous: player.isAnonymous!,
-			gang: player.gang!,
-			password: player.password!,
-			twoFactorEnabled: player.twoFAEnabled,
-			twoFactorSecret: player.twoFASecret
-		} as User
+		if (!user.twoFAEnabled || !user.twoFASecret) return reply.code(400).send({ error: '2FA não está habilitado' })
 
-		if (!user.twoFactorEnabled || !user.twoFactorSecret) return reply.code(400).send({ error: '2FA não está habilitado' })
-
-		let isValid = authenticator.check(token, user.twoFactorSecret)
+		let isValid = authenticator.check(token, user.twoFASecret)
 		const backupCode = await PlayerController.getBackupCodes(user.id)
 
 		if (!isValid) {

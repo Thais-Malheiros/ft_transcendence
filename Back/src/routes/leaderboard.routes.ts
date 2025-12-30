@@ -1,5 +1,16 @@
 import { FastifyInstance, FastifyRequest } from 'fastify';
-import { db } from '../database/memoryDB';
+import { prisma } from '../database/prisma';
+
+interface LeaderboardItem {
+    id: number;
+    name: string;
+    nick: string;
+    avatar: string;
+    score: number;
+    gang: string;
+    isOnline: boolean;
+    rank: number;
+}
 
 export async function leaderboardRoutes(app: FastifyInstance) {
 
@@ -7,24 +18,22 @@ export async function leaderboardRoutes(app: FastifyInstance) {
         onRequest: [app.authenticate]
     }, async (req: FastifyRequest, reply) => {
 
-        const allUsers = db.getAllUsers();
+        const allUsers = await prisma.player.findMany({
+            orderBy: {
+                score: 'desc'
+            }
+        });
 
-        const leaderboardData = allUsers.map(u => ({
+        const leaderboardData: LeaderboardItem[] = allUsers.map((u, index) => ({
             id: u.id,
             name: u.name,
             nick: u.nick,
             avatar: u.avatar || 'src/assets/Profile_images/Potato_default.jpg',
-            score: u.score || 0, 
+            score: u.score,
             gang: u.gang,
-            isOnline: u.isOnline ?? false,
-            rank: 0
+            isOnline: u.isOnline,
+            rank: index + 1
         }));
-
-        leaderboardData.sort((a, b) => b.score - a.score);
-
-        leaderboardData.forEach((user, index) => {
-            user.rank = index + 1;
-        });
 
         return reply.send(leaderboardData);
     });
