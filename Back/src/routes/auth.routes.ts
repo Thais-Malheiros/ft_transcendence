@@ -79,6 +79,7 @@ export async function authRoutes(app: FastifyInstance) {
 		const { identifier, password } = req.body as LoginInput
 
 		const user = await PlayerController.findByIdentifier(identifier)
+
 		if (!user || !user.password) return reply.code(404).send({ error: 'Credenciais inválidas' })
 
 		const isValid = await bcrypt.compare(password, user.password!)
@@ -103,10 +104,8 @@ export async function authRoutes(app: FastifyInstance) {
 			isAnonymous: user.isAnonymous, gang: user.gang
 		})
 
-		return reply.code(200).send({
-			token,
-			user: AuthService.sanitizePlayer(user)
-		})
+		let finalUser = AuthService.sanitizePlayer(user);
+		return reply.code(200).send({ token, user: finalUser })
 	})
 
 	// --- LOGIN 2FA ---

@@ -5,6 +5,7 @@ import { nickSchema, UpdateNickInput } from '../schemas/common.schemas'
 import { updateNickRouteSchema } from '../schemas/swagger/users.schemas'
 import { AuthService } from '../services/authServices'
 
+
 export async function usersRoutes(app: FastifyInstance) {
 
     // --- ATUALIZAR NICK ---
@@ -47,8 +48,6 @@ export async function usersRoutes(app: FastifyInstance) {
     // --- ATUALIZAR AVATAR ---
     app.patch('/me/avatar', {
         onRequest: [app.authenticate],
-        // Descomente se tiver validação schemas
-        // schema: updateAvatarRouteSchema,
     }, async (req: FastifyRequest, reply) => {
         const { avatarId } = req.body as { avatarId: string }
 
@@ -74,12 +73,26 @@ export async function usersRoutes(app: FastifyInstance) {
         if (!player) return reply.code(404).send({ error: 'Usuário não encontrado' })
 
         // NÃO converta para 'as User'. Use o player direto.
-        return reply.send({
-            user: AuthService.sanitizePlayer(player),
-            profile: {
-                avatar: player.avatar || null,
-                score: player.score || 0,
-            }
-        })
+        // return reply.send({
+        //     user: AuthService.sanitizePlayer(player),
+        //     profile: {
+        //         avatar: player.avatar || null,
+        //         score: player.score || 0,
+        //     }
+        // })
+		return reply.send({
+			id: player.id,
+			name: player.name,
+			nick: player.nick,
+			email: player.email,
+			isAnonymous: player.isAnonymous,
+			gang: player.gang,
+			has2FA: player.twoFAEnabled,
+			avatar: player.avatar || null,
+			score: player.score || 0,
+			gamesWinned: player.gamesWinned || 0,
+			gamesLosed: player.gamesLosed || 0,
+			gamesPlayed: player.gamesPlayed || 0,
+		})
     })
 }

@@ -2,6 +2,7 @@ import { Server } from 'socket.io';
 import { GameState, PlayerSkin, PowerUpType } from '../types/game';
 // CORREÇÃO 1: Importar Prisma e remover db
 import { prisma } from '../database/prisma';
+import { PlayerController } from '../database/controllers/player.controller';
 
 // Constantes
 const FPS = 60;
@@ -408,25 +409,8 @@ export class PongMatch {
 			const currentLoserScore = loserPlayer.score || 0;
 			const actualLosePoints = Math.min(currentLoserScore, POINTS_LOSE);
 
-			// 3. Atualiza Vencedor
-			await prisma.player.update({
-				where: { id: winnerId },
-				data: {
-					score: { increment: POINTS_WIN },
-					gamesWinned: { increment: 1 },
-					gamesPlayed: { increment: 1 }
-				}
-			});
-
-			// 4. Atualiza Perdedor
-			await prisma.player.update({
-				where: { id: loserId },
-				data: {
-					score: { decrement: actualLosePoints },
-					gamesLosed: { increment: 1 },
-					gamesPlayed: { increment: 1 }
-				}
-			});
+			await PlayerController.incrementGamesWon(winnerId, POINTS_WIN);
+			await PlayerController.incrementGamesLost(loserId, actualLosePoints);
 
 			console.log(`[RANKED] ${winnerPlayer.nick} (+${POINTS_WIN}) vs ${loserPlayer.nick} (-${actualLosePoints})`);
 		}

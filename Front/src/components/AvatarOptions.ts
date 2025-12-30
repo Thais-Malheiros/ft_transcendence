@@ -83,12 +83,12 @@ function renderAvatarItem(avatar: AvatarOption, gang: Gang): string {
 	const styles = gangStyles[gang];
 
 	return `
-		<button 
+		<button
 			type="button"
-			class="avatar-option relative w-20 h-20 md:w-24 md:h-24 rounded-full overflow-hidden 
+			class="avatar-option relative w-20 h-20 md:w-24 md:h-24 rounded-full overflow-hidden
 					border-2 border-white/20 ${styles.hoverBorder} ${styles.glowColor}
 					transition-all duration-300 cursor-pointer
-					hover:scale-110 focus:outline-none focus:ring-2 ${styles.selectedRing} 
+					hover:scale-110 focus:outline-none focus:ring-2 ${styles.selectedRing}
 					focus:ring-offset-2 focus:ring-offset-slate-900"
 			data-avatar-id="${avatar.id}"
 			data-avatar-src="${avatar.src}"
@@ -112,12 +112,12 @@ export function AvatarSelectionModal(gang: Gang): string {
 		.join('');
 
 	return `
-		<div id="avatar-modal-backdrop" 
+		<div id="avatar-modal-backdrop"
 			 class="fixed inset-0 bg-black/80 backdrop-blur-sm flex justify-center items-center p-4 z-50">
-			
-			<div class="bg-slate-900 border-2 ${styles.borderColor} rounded-2xl p-6 md:p-8 max-w-lg w-full 
+
+			<div class="bg-slate-900 border-2 ${styles.borderColor} rounded-2xl p-6 md:p-8 max-w-lg w-full
 						shadow-[0_0_50px_rgba(0,0,0,0.5)] animate-fade-in">
-				
+
 				<!-- Header -->
 				<div class="text-center mb-6">
 					<h3 class="text-2xl md:text-3xl font-bold ${styles.titleColor} mb-2">
@@ -135,10 +135,10 @@ export function AvatarSelectionModal(gang: Gang): string {
 
 				<!-- Botão Cancelar -->
 				<div class="flex justify-center">
-					<button 
-						id="btn-avatar-cancel" 
+					<button
+						id="btn-avatar-cancel"
 						type="button"
-						class="px-6 py-2 rounded-lg font-bold bg-slate-700 hover:bg-slate-600 
+						class="px-6 py-2 rounded-lg font-bold bg-slate-700 hover:bg-slate-600
 							   text-white transition-all duration-200"
 					>
 						Cancelar
@@ -151,7 +151,7 @@ export function AvatarSelectionModal(gang: Gang): string {
 
 // --- FUNÇÃO PARA ABRIR O MODAL ---
 export function showAvatarModal(
-	gang: Gang, 
+	gang: Gang,
 	onSelect: (avatarId: string, avatarSrc: string) => void
 ): void {
 	const layer = document.getElementById('modal-layer');
@@ -194,4 +194,22 @@ export function closeAvatarModal(): void {
 	if (layer) {
 		layer.innerHTML = '';
 	}
+}
+
+
+export function getAvatarSrcFromId(gang: Gang, idOrPath: string | undefined | null): string {
+    // 1. Se não tiver nada, retorna o padrão
+    if (!idOrPath) return getDefaultAvatar(gang);
+
+    // 2. Tenta encontrar na lista de avatares pelo ID (ex: 'potato-1')
+    const avatarList = avatarsByGang[gang];
+    const foundAvatar = avatarList.find(av => av.id === idOrPath);
+
+    if (foundAvatar) {
+        return foundAvatar.src; // Retorna o import da imagem (caminho real)
+    }
+
+    // 3. Fallback: Se não achou pelo ID, pode ser que já seja o caminho (legado)
+    // Se não for nada válido, retorna o padrão da gangue.
+    return idOrPath.includes('/') ? idOrPath : getDefaultAvatar(gang);
 }

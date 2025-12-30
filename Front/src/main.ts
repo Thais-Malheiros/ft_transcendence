@@ -99,7 +99,7 @@ async function renderView(route: Route) {
 			app.innerHTML = DashboardView.getDashboardHtml();
 			DashboardView.setupDashboardEvents(navigateTo);
 			break;
-		
+
 		case 'multiplayer':
 			if (checkAnonymousAccess()) return;
 			app.innerHTML = await Multiplayer.getMultiplayerHtml();
@@ -110,7 +110,7 @@ async function renderView(route: Route) {
 			app.innerHTML = GameView.getGameHtml();
 			initGameSocket();
 			 break;
-		
+
 		case 'soloIA':
 			app.innerHTML = SoloIA.getSoloIAHtml();
 			SoloIA.setupSoloIAEvents((r, p) => navigateTo(r, p));
@@ -124,7 +124,7 @@ async function renderView(route: Route) {
 
 		case 'profile':
 			if (checkAnonymousAccess()) return;
-			app.innerHTML = ProfileView.getProfileHtml();
+			app.innerHTML = await ProfileView.getProfileHtml();
 			ProfileView.setupProfileEvents(navigateTo);
 			break;
 
@@ -181,9 +181,9 @@ window.addEventListener('popstate', (event) => {
 		navigateTo(event.state.route, routeState.params, false);
 	} else {
 		const path = window.location.hash.replace('#', '') as Route;
-		
+
 		const validRoutes: Route[] = ['login', 'register', 'dashboard', 'game', 'game-solo', 'profile', 'friends', 'leaderboard', 'settings', '2fa', '2fa-disable', 'login2fa'];
-		
+
 		if (validRoutes.includes(path)) {
 			navigateTo(path, false);
 		} else {

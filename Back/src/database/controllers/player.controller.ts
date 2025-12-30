@@ -116,4 +116,64 @@ export class PlayerController {
 		})
 		return codes.map(c => c.code)
 	}
+
+	static async getGameStats(playerId: number): Promise<{
+		gamesWinned: number;
+		gamesLosed: number;
+		gamesPlayed: number;
+	} | null> {
+		const player = await prisma.player.findUnique({
+			where: { id: playerId },
+		})
+		if (!player) return null;
+		return {
+			gamesWinned: player.gamesWinned,
+			gamesLosed: player.gamesLosed,
+			gamesPlayed: player.gamesPlayed,
+		}
+	}
+
+	// Increment games won
+	static async incrementGamesWon(playerId: number, points: number): Promise<void> {
+		await prisma.player.update({
+			where: { id: playerId },
+			data: {
+				gamesWinned: { increment: 1 },
+				gamesPlayed: { increment: 1 },
+				score: { increment: points }
+			},
+		})
+	}
+
+	// Increment games lost
+	static async incrementGamesLost(playerId: number, points: number): Promise<void> {
+		await prisma.player.update({
+			where: { id: playerId },
+			data: {
+				gamesLosed: { increment: 1 },
+				gamesPlayed: { increment: 1 },
+				score: { decrement: points }
+			},
+		})
+	}
+
+	static async updateGameStats(
+		playerId: number,
+		stats: {
+			gamesWinned?: number;
+			gamesLosed?: number;
+			gamesPlayed?: number;
+		}
+	): Promise<Player> {
+		return await prisma.player.update({
+			where: { id: playerId },
+			data: stats,
+		})
+	}
+
+	static async getWinRate(playerId: number): Promise<number> {
+		const stats = await this.getGameStats(playerId)
+		if (!stats || stats.gamesPlayed === 0) return 0
+		return (stats.gamesWinned / stats.gamesPlayed) * 100
+	}
 }

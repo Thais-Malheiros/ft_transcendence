@@ -40,7 +40,7 @@ function setupController(retryCount = 0) {
     if (!canvasElement){
         if(window.location.hash !== '#game') return;
     }
-    
+
     if (canvasElement) {
         try {
             console.log("Canvas encontrado! Criando GameController...");
@@ -48,9 +48,9 @@ function setupController(retryCount = 0) {
         } catch (e) {
             console.error("Falha ao iniciar GameController:", e);
         }
-    } 
+    }
     else {
-        if (retryCount < 10) { 
+        if (retryCount < 10) {
             setTimeout(() => setupController(retryCount + 1), 200);
         }
     }
@@ -99,20 +99,19 @@ export function disconnectGame() {
 }
 
 export const multiplayerService = {
-    // CORREÇÃO: Ajustei a rota para ser consistente
-    listGameInvites: () => 
+    listGameInvites: () =>
         api.get<GameInvite[]>('/game/casual/invites'),
 
-    joinRankedQueue: () => 
-        api.get<QueueResponse>('/game/ranked'), 
+    joinRankedQueue: () =>
+        api.get<QueueResponse>('/game/ranked'),
 
-    leaveQueue: () => 
+    leaveQueue: () =>
         api.post('/game/queue/leave', {}),
 
-    sendGameInvite: (nick: string) => 
+    sendGameInvite: (nick: string) =>
         api.post('/game/casual/invite', { nick }),
 
-    respondGameInvite: (nick: string, action: 'accept' | 'decline') => 
+    respondGameInvite: (nick: string, action: 'accept' | 'decline') =>
         api.post(`/game/casual/response`, { nick, action })
 };
 

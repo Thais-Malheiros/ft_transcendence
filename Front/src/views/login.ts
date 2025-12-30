@@ -14,8 +14,8 @@ export function getLoginHtml() {
 		<div class="min-h-screen flex justify-center items-center p-5">
 
 			${Card({
-				className: "max-w-md w-full text-center",
-				children: `
+		className: "max-w-md w-full text-center",
+		children: `
 
 					<h2 class="text-cyan-500 mb-4 text-6xl font-bold tracking-tighter drop-shadow-[0_0_10px_rgba(255,255,255,1.8)] font-cartoon cartoon-title">
 					<div class="text-yellow-400 cartoon-title yellow">
@@ -28,68 +28,68 @@ export function getLoginHtml() {
 					</h2>
 
 					${Button({
-						id: "btn-register",
-						text: "Criar Conta",
-						variant: "secondary",
-						className: "mb-6"
-					})}
+			id: "btn-register",
+			text: "Criar Conta",
+			variant: "secondary",
+			className: "mb-6"
+		})}
 
 					${Form({
-						id: "form-login",
-						className: "space-y-4 text-left",
-						children: `
+			id: "form-login",
+			className: "space-y-4 text-left",
+			children: `
 							<div>
 								<label class="block text-sm text-gray-400 mb-1 ml-1">Login</label>
 								${Input({
-									id: "input-login-user",
-									placeholder: "Seu usuário ou email",
-									attributes: 'required autocomplete="username"'
-								})}
+				id: "input-login-user",
+				placeholder: "Seu usuário ou email",
+				attributes: 'required autocomplete="username"'
+			})}
 							</div>
 
 							<div>
 								<label class="block text-sm text-gray-400 mb-1 ml-1">Senha</label>
 								${Input({
-									id: "input-login-pass",
-									type: "password",
-									placeholder: "••••••",
-									attributes: 'required autocomplete="current-password"'
-								})}
+				id: "input-login-pass",
+				type: "password",
+				placeholder: "••••••",
+				attributes: 'required autocomplete="current-password"'
+			})}
 							</div>
 
 							${Button({
-								id: "btn-login-user",
-								text: "Entrar",
-								variant: "primary",
-								className: "mt-8",
-								attributes: 'type="submit"'
-							})}
+				id: "btn-login-user",
+				text: "Entrar",
+				variant: "primary",
+				className: "mt-8",
+				attributes: 'type="submit"'
+			})}
 						`
-					})}
+		})}
 
 					<div class="mt-6 border-t border-white/10 pt-6" />
 
 					${Form({
-						id: "form-login-guest",
-						className: "space-y-4",
-						children: `
+			id: "form-login-guest",
+			className: "space-y-4",
+			children: `
 							${Input({
-								id: "input-login-guest",
-								placeholder: "Seu usuário",
-								attributes: 'required'
-							})}
+				id: "input-login-guest",
+				placeholder: "Seu usuário",
+				attributes: 'required'
+			})}
 
 							${Button({
-								id: "btn-login-guest",
-								text: "Entrar como Visitante",
-								variant: "ghost",
-								className: "text-sm underline decoration-transparent hover:decoration-white",
-								attributes: 'type="submit"'
-							})}
-						`
-					})}
-				`
+				id: "btn-login-guest",
+				text: "Entrar como Visitante",
+				variant: "ghost",
+				className: "text-sm underline decoration-transparent hover:decoration-white",
+				attributes: 'type="submit"'
 			})}
+						`
+		})}
+				`
+	})}
 
 		</div>
 	`
@@ -123,63 +123,65 @@ export function setupLoginEvents(navigate: (route: Route) => void) {
 		}
 
 		try {
-				const response = await authService.login({
-					identifier: userInput,
-					password: passInput
-				});
+			const response = await authService.login({
+				identifier: userInput,
+				password: passInput
+			});
 
-				// Verifica 2FA
-				if (response.requires2FA && response.tempToken) {
-					console.log("TEMP TOKEN: " + response.tempToken);
-					localStorage.setItem('tempToken', response.tempToken);
+			console.log("AVATAR AQUI: " + response.user.avatar)
 
-					// Preenchemos um user placeholder temporário no estado
-					state.user = {
-						id: 0,
-						name: '',
-						nick: '',
-						isAnonymous: false,
-						score: 0,
-						rank: 0,
-						isOnline: false,
-						has2FA: true,
-						gang: 'potatoes'
-					};
+			// Verifica 2FA
+			if (response.requires2FA && response.tempToken) {
+				console.log("TEMP TOKEN: " + response.tempToken);
+				localStorage.setItem('tempToken', response.tempToken);
 
-					// Usa a função recebida para navegar
-					navigate('login2fa');
-					return;
-				}
-
-				// Fluxo normal (Login Sucesso)
-				localStorage.setItem('token', response.token);
-				state.isAuthenticated = true;
-
-				// Atualiza o estado global
+				// Preenchemos um user placeholder temporário no estado
 				state.user = {
-					id: response.user.id,
-					name: response.user.name,
-					nick: response.user.nick,
-					gang: response.user.gang,
-					isAnonymous: response.user.isAnonymous,
-					isOnline: true,
+					id: 0,
+					name: '',
+					nick: '',
+					isAnonymous: false,
 					score: 0,
 					rank: 0,
-					has2FA: response.user.has2FA,
-					avatar: response.user.avatar
+					isOnline: false,
+					has2FA: true,
+					gang: 'potatoes'
 				};
 
-				saveState(); // Salva no localStorage usando o helper
-				navigate('dashboard');
-
-			} catch (error) {
-				showModal({
-					title: "Erro no login",
-					message: "Não foi possível realizar o login. Verifique suas credenciais.",
-					type: "danger",
-					confirmText: "Tentar novamente"
-				});
+				// Usa a função recebida para navegar
+				navigate('login2fa');
+				return;
 			}
+
+			// Fluxo normal (Login Sucesso)
+			localStorage.setItem('token', response.token);
+			state.isAuthenticated = true;
+
+			// Atualiza o estado global
+			state.user = {
+				id: response.user.id,
+				name: response.user.name,
+				nick: response.user.nick,
+				gang: response.user.gang,
+				isAnonymous: response.user.isAnonymous,
+				isOnline: true,
+				score: 0,
+				rank: 0,
+				has2FA: response.user.has2FA,
+				avatar: response.user.avatar
+			};
+
+			saveState(); // Salva no localStorage usando o helper
+			navigate('dashboard');
+
+		} catch (error) {
+			showModal({
+				title: "Erro no login",
+				message: "Não foi possível realizar o login. Verifique suas credenciais.",
+				type: "danger",
+				confirmText: "Tentar novamente"
+			});
+		}
 	});
 
 	// 2. LOGIN DE CONVIDADO (ANÔNIMO)

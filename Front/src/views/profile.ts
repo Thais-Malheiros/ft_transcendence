@@ -1,31 +1,30 @@
 // src/views/profile.ts
+import { getAvatarSrcFromId, getDefaultAvatar, showAvatarModal, type Gang } from "@/components/AvatarOptions";
 import { Button } from "../components/Button";
 import { Card } from "../components/Card";
 import { Input } from "../components/Input";
 import { saveState, state, type Route } from "../store/appState";
 import { showModal } from "../utils/modalManager";
-import { showAvatarModal } from "@/components/AvatarOptions";
-import { getDefaultAvatar, type Gang } from "@/components/AvatarOptions";
 
 //imgs
 import { Form } from "@/components/Form";
 import { nickSchema } from "@/schemas/common.schemas";
+import { profileService } from "@/services/profileRoutes";
 import { validateForm } from "@/utils/formValidation";
 import bgPotatoes from '../assets/bg-login-potatoes.png';
 import bgTomatoes from '../assets/bg-login-tomatoes.png';
 import bgDefault from '../assets/bg-login.png';
-import { profileService } from "@/services/profileRoutes";
 
 // --- HELPER LOCAL ---
-const StatItem = (label: string, valueId: string, colorClass: string = "text-white") => `
+const StatItem = (label: string, valueId: string, colorClass: string = "text-white", value: number) => `
 	<div class="bg-black/30 p-4 rounded-xl border border-white/5 text-center hover:border-white/10 transition">
 		<p class="text-xs text-gray-500 uppercase tracking-widest mb-1">${label}</p>
-		<p id="${valueId}" class="text-2xl font-bold ${colorClass}">-</p>
+		<p id="${valueId}" class="text-2xl font-bold ${colorClass}">${value}</p>
 	</div>
 `;
 
 // --- HTML ---
-export function getProfileHtml() {
+export async function getProfileHtml() {
 	const user = state.user;
 	const selectedGang = (user?.gang || 'potatoes') as 'potatoes' | 'tomatoes';
 
@@ -36,7 +35,7 @@ export function getProfileHtml() {
 	};
 
 	const bgSrc = backgrounds[selectedGang] || bgDefault;
-	const avatarSrc = user?.avatar || getDefaultAvatar(selectedGang);
+	const avatarSrc = getAvatarSrcFromId(selectedGang, user?.avatar);
 
 	console.log("Rendering profile for gang:", selectedGang);
 
@@ -46,6 +45,30 @@ export function getProfileHtml() {
 	const titleGlow = selectedGang === "potatoes" ? "drop-shadow-[0_0_15px_rgba(234,179,8,0.5)]" : selectedGang === "tomatoes" ? "drop-shadow-[0_0_15px_rgba(239,68,68,0.5)]" : "drop-shadow-[0_0_15px_rgba(6,182,212,0.5)]";
 
 	const nick = user ? user.nick : "Visitante";
+
+	try {
+		const user = await profileService.getProfile();
+		state.user = {
+			id: user.id,
+			name: user.name,
+			nick: user.nick,
+			isAnonymous: user.isAnonymous,
+			gang: user.gang,
+			avatar: user.avatar,
+			has2FA: user.has2FA,
+			score: user.score,
+			rank: state.user?.rank || 0,
+			isOnline: state.user?.isOnline || false,
+			gamesWinned: user.gamesWinned,
+			gamesLosed: user.gamesLosed,
+			gamesPlayed: user.gamesPlayed,
+		};
+		saveState();
+	} catch (error) {
+		console.error("Erro ao carregar dados do usuário para perfil:", error);
+	}
+
+	console.log("Dados do usuário carregados para perfil:", state.user);
 
 	return `
 		<img id="bg-image" src="${bgSrc}" alt="Background" class="fixed inset-0 w-full h-full object-cover -z-10 opacity-30" />
@@ -57,17 +80,17 @@ export function getProfileHtml() {
 				</h2>
 				<div class="self-end sm:self-auto">
 					${Button({
-						id: "btn-profile-back",
-						text: "← VOLTAR",
-						variant: "ghost",
-						className: "w-auto min-w-[120px] max-w-[200px]",
-					})}
+		id: "btn-profile-back",
+		text: "← VOLTAR",
+		variant: "ghost",
+		className: "w-auto min-w-[120px] max-w-[200px]",
+	})}
 				</div>
 			</div>
 
 			${Card({
-				className: "max-w-5xl w-full bg-slate-900/80 backdrop-blur-md",
-				children: `
+		className: "max-w-5xl w-full bg-slate-900/80 backdrop-blur-md",
+		children: `
 					<div class="flex flex-col md:flex-row gap-10">
 						<div class="flex flex-col items-center gap-4 min-w-[200px]">
 							<div class="relative w-48 h-48 rounded-full overflow-hidden border-4 ${avatarBorder} shadow-[0_0_30px_rgba(0,0,0,0.5)] bg-black group cursor-pointer">
@@ -77,9 +100,6 @@ export function getProfileHtml() {
 								</div>
 								<input type="file" id="upload-avatar" class="hidden" accept="image/*">
 							</div>
-							<p class="text-gray-400 text-sm bg-slate-800 px-3 py-1 rounded-full border border-white/5">
-								Ranking Global: <span class="text-cyan-400 font-bold">#--</span>
-							</p>
 						</div>
 
 						<div class="flex-1 w-full flex flex-col justify-between">
@@ -95,7 +115,7 @@ export function getProfileHtml() {
 											className: "mb-8 bg-slate-800/50 border-white/10 focus:bg-black/60 text-lg"
 										})}
 									`
-								})}
+									})}
 
 								<h3 class="text-lg text-white mb-4 font-bold flex items-center gap-2">
 									<span class="w-1.5 h-6 bg-purple-500 rounded-full inline-block shadow-[0_0_10px_#a855f7]"></span>
@@ -103,10 +123,10 @@ export function getProfileHtml() {
 								</h3>
 
 								<div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
-									${StatItem("Jogos", "stat-games")}
-									${StatItem("Vitórias", "stat-wins", "text-green-400")}
-									${StatItem("Derrotas", "stat-losses", "text-red-400")}
-									${StatItem("Win Rate", "stat-wr", "text-cyan-400")}
+									${StatItem("Jogos", "stat-games", "", state.user?.gamesPlayed || 0)}
+									${StatItem("Vitórias", "stat-wins", "", state.user?.gamesWinned || 0)}
+									${StatItem("Derrotas", "stat-losses", "", state.user?.gamesLosed || 0)}
+									${StatItem("Win Rate", "stat-wr", "", 0)}
 								</div>
 							</div>
 
@@ -118,11 +138,11 @@ export function getProfileHtml() {
 									className: "w-full md:w-auto md:px-12",
 									attributes: 'type="submit" form="form-profile"',
 								})}
+								</div>
 							</div>
 						</div>
-					</div>
-				`
-			})}
+							`
+							})}
 		</div>
 	`;
 }
@@ -168,7 +188,7 @@ export function setupProfileEvents(navigate: (route: Route) => void) {
 		}
 
 		if (nick === state.user?.nick) {
-			return ;
+			return;
 		}
 
 		try {
@@ -207,13 +227,11 @@ export function setupProfileEvents(navigate: (route: Route) => void) {
 		profileImgContainer.addEventListener('click', () => {
 			const gang = (state.user?.gang || 'potatoes') as Gang;
 			showAvatarModal(gang, async (avatarId, avatarSrc) => {
-				// Atualiza a imagem visualmente
 				const img = document.getElementById('profile-img') as HTMLImageElement;
 				if (img) {
 					img.src = avatarSrc;
 				}
 
-				// Salvar no state local (para persistir visualmente)
 				if (state.user) {
 					state.user.avatar = avatarSrc;
 					saveState();

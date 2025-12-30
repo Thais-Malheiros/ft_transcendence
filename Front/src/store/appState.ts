@@ -1,5 +1,5 @@
-export type Route = 
-|'login' 
+export type Route =
+|'login'
 | 'register'
 | '2fa'
 | '2fa-disable'
@@ -24,8 +24,11 @@ export interface User {
     score: number;
     rank: number;
     isOnline: boolean;
-    gang: 'potatoes' | 'tomatoes'
+    gang: string
     has2FA: boolean;
+	gamesWinned?: number;
+	gamesLosed?: number;
+	gamesPlayed?: number;
 }
 
 interface State {
