@@ -6,8 +6,6 @@ import { Socket } from 'socket.io-client';
 import { LocalGameEngine } from "../game/LocalGameEngine";
 import type { GameState } from '../types/game';
 import { PowerUpType } from '../types/game';
-
-import imgBlueBall from '../assets/blueball.png';
 import imgRedBall from '../assets/redball.png';
 
 // PowerUp icons
@@ -21,9 +19,6 @@ import imgPotatoDown from '../assets/moves/Potato_Down.png';
 import imgPotatoUp from '../assets/moves/Potato_Up.png';
 import imgTomatoDown from '../assets/moves/Tomato_Down.png';
 import imgTomatoUp from '../assets/moves/Tomato_Up.png';
-
-import imgProfileDefaultTomato from '../assets/Profile_images/Tomato_default.jpg';
-import imgProfileDefaultPotato from '../assets/Profile_images/Potato_default.jpg';
 
 import { avatarsByGang, getDefaultAvatar, type Gang } from "@/components/AvatarOptions";
 
@@ -76,13 +71,13 @@ export function getGameHtml() {
             <div class="relative z-10">
                 <div class="relative bg-slate-950 rounded-xl border-4 border-slate-700 shadow-[0_0_50px_rgba(0,0,0,0.5)] overflow-visible">
                     
-                    <div id="p1-game-avatar" class="absolute left-[-180px] w180px] h-[200px] transition-all duration-75 pointer-events-none z-20">
+                    <div id="p1-game-avatar" class="absolute left-[-180px] w-[200px] h-[200px] transition-all duration-75 pointer-events-none z-20">
                          <img id="p1-skin-img" src="${avatarSrcP1}" class="w-full h-full drop-shadow-lg filter brightness-110">
                     </div>
 
                     <canvas id="pongCanvas" width="800" height="600" class="block rounded-lg cursor-none bg-slate-900/50"></canvas>
 
-                    <div id="p2-game-avatar" class="absolute right-[-230px] w-[280px] h-[280px] transition-all duration-75 pointer-events-none z-20">
+                    <div id="p2-game-avatar" class="absolute right-[-180px] w-[200px] h-[200px] transition-all duration-75 pointer-events-none z-20">
                         <img id="p2-skin-img" src="${avatarSrcP1}" class="w-full h-full drop-shadow-lg filter brightness-110 transform scale-x-[-1]">
                     </div>
 
@@ -559,16 +554,21 @@ export class GameController {
     }
 
     private triggerConfetti(scorer: 'player1' | 'player2') {
-        const isLeft = scorer === 'player1';
-        const color = isLeft ? '#ef4444' : '#fbbf24';
-        
-        confetti({
-            particleCount: 100,
-            spread: 60,
-            origin: { x: isLeft ? 0.2 : 0.8, y: 0.5 },
-            colors: [color, '#ffffff']
-        });
-    }
+            const player = this.gameState?.[scorer];
+            
+            if (!player) return;
+
+            const isLeft = scorer === 'player1';
+            const isTomato = player.skin.includes('tomato');
+            const color = isTomato ? '#ef4444' : '#fbbf24'; 
+            
+            confetti({
+                particleCount: 100,
+                spread: 60,
+                origin: { x: isLeft ? 0.2 : 0.8, y: 0.5 }, // A origem continua baseada na posição
+                colors: [color, '#ffffff']
+            });
+        }
 
     private showGameOver(data: { winnerId: string, message: string }) {
         const overlay = this.els['game-overlay'];

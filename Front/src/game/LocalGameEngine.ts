@@ -74,7 +74,7 @@ export class LocalGameEngine {
           avatar: myProfilePic,     
           gameAvatar: myGameAvatar, 
           skin: myGang === 'potatoes' ? 'potato' : 'tomato'
-          // skin: 'tomato'
+
       },
       
       // (IA - C.A.D.E.T.E.)
