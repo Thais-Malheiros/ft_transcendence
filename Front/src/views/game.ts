@@ -26,8 +26,8 @@ import imgTomatoUp from '../assets/moves/Tomato_Up.png';
 import { getDefaultAvatar } from "@/components/AvatarOptions";
 import { navigateTo } from "@/main";
 import { state } from "@/store/appState";
-import { default as bgMixed, default as bgPotatoes } from '../assets/bg-login-potatoes.png';
-import bgTomatoes from '../assets/bg-login-tomatoes.png';
+import { default as bgMixed, default as bgPotatoes } from '../assets/gameBackground.png';
+import bgTomatoes from '../assets/gameBackground.png';
 
 // --- 1. A ESTRUTURA HTML (Visual) ---
 export function getGameHtml() {
@@ -77,7 +77,7 @@ export function getGameHtml() {
 
                     <canvas id="pongCanvas" width="800" height="600" class="block rounded-lg cursor-none bg-slate-900/50"></canvas>
 
-                    <div id="p2-game-avatar" class="absolute right-[-180px] w-[200px] h-[200px] transition-all duration-75 pointer-events-none z-20">
+                    <div id="p2-game-avatar" class="absolute right-[-230px] w-[280px] h-[280px] transition-all duration-75 pointer-events-none z-20">
                         <img id="p2-skin-img" src="${avatarSrcP1}" class="w-full h-full drop-shadow-lg filter brightness-110 transform scale-x-[-1]">
                     </div>
 
@@ -460,19 +460,8 @@ export class GameController {
 
     private drawPowerUp(powerUp: NonNullable<GameState['powerUp']>) {
         const { x, y, type } = powerUp;
-        const iconSize = 50;
+        const iconSize = 80;
         const offset = iconSize / 2;
-
-        this.ctx.beginPath();
-        this.ctx.arc(x, y, 25, 0, Math.PI * 2);
-        this.ctx.fillStyle = 'rgba(255, 255, 255, 0.15)';
-        this.ctx.fill();
-        this.ctx.strokeStyle = '#fff';
-        this.ctx.stroke();
-
-        this.ctx.strokeStyle = `rgba(255, 255, 255, ${0.5 + Math.sin(Date.now() / 200) * 0.2})`;
-        this.ctx.lineWidth = 3;
-        this.ctx.stroke();
 
         // Seleciona a imagem correta baseado no tipo de PowerUp
         let icon: HTMLImageElement | undefined;
