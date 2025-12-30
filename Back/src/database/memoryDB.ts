@@ -81,6 +81,10 @@ export class User {
     setAvatar(avatar: string): void {
         this.avatar = avatar;
     }
+
+    getAvatar(): string | undefined {
+        return this.avatar;
+    }
 }
 
 class MemoryDatabase {

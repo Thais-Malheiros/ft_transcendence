@@ -12,6 +12,7 @@ import { friendsRoutes } from './routes/friends.routes'
 import { gameRoutes } from './routes/game.routes'
 import { leaderboardRoutes } from './routes/leaderboard.routes'
 import { usersRoutes } from './routes/users.routes'
+import { db } from './database/memoryDB'
 
 dotenv.config()
 
@@ -98,7 +99,7 @@ const start = async () => {
         app.register(gameRoutes, { prefix: '/game', io: io })
         await app.ready()
         
-        io.on('connection', (socket: Socket) => {
+        io.on('connection', async (socket: Socket) => {
             console.log(`\n[SOCKET] Nova conexão recebida: ${socket.id}`);
 
             // LOG 1: Ver se o token está chegando do frontend
@@ -109,15 +110,20 @@ const start = async () => {
 
             try {
                 if (tokenRecebido) {
-                    // LOG 2: Tentar decodificar
-                    const decoded = app.jwt.decode(tokenRecebido);
-                    // console.log(`[SOCKET] Token Decodificado:`, JSON.stringify(decoded, null, 2));
-
-                    if (decoded && typeof decoded === 'object') {
-                        userData = decoded;
+                    const decoded = app.jwt.decode(tokenRecebido) as any;
+                    if (decoded && decoded.id) {
+                        const userFromDb = await db.findUserById(decoded.id);
+                        if (userFromDb) {
+                            userData = {
+                            id: userFromDb.id,
+                            nick: userFromDb.nick,
+                            avatar: userFromDb.avatar || '', 
+                            gameAvatar: userFromDb.gameAvatar || '',
+                            skin: userFromDb.gang === 'potatoes' ? 'potato' : 'tomato',
+                            gang: userFromDb.gang
+                            };
+                        }
                     }
-                } else {
-                    console.log(`[SOCKET] ⚠️ ALERTA: Cliente conectou sem token!`);
                 }
             } catch (e) {
                 console.error(`[SOCKET] Erro ao decodificar token:`, e);
@@ -151,6 +157,7 @@ const start = async () => {
                         
                         // Recupera as instâncias dos sockets
                         const p1Socket = io.sockets.sockets.get(id1);
+
                         const p2Socket = io.sockets.sockets.get(id2);
                         
                         if (p1Socket && p2Socket) {

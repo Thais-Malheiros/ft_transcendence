@@ -78,7 +78,7 @@ export class PongMatch {
           shield: false, 
           nick: p1Data.nick,
           avatar: p1Data.avatar,
-          gameAvatar: p1Data.gameAvatar,
+          gameAvatar: "",
           skin: p1Data.skin as PlayerSkin
       },
       
@@ -90,7 +90,7 @@ export class PongMatch {
           shield: false, 
           nick: p2Data.nick,
           avatar: p2Data.avatar,
-          gameAvatar: p2Data.gameAvatar,
+          gameAvatar: "",
           skin: p2Data.skin as PlayerSkin
       },
       
