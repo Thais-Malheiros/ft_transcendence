@@ -31,7 +31,7 @@ services:
       - "${FRONT_PORT:-5173}:5173"
     environment:
       - NODE_ENV=development
-      - VITE_API_URL=http://localhost:3333
+      - VITE_API_URL=http://${HOST_IP}::3333
     env_file:
       - .env
     networks:
